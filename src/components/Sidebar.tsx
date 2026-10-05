@@ -48,7 +48,7 @@ export default function Sidebar({
     {
       title: "Campus & Staff",
       items: [
-        { name: "เช็คชื่อหน้าเสาธง", href: "/attendance", icon: CalendarCheck, glow: "group-hover:text-emerald-400" },
+        { name: "ระบบเช็คชื่อนักศึกษา", href: "/attendance", icon: CalendarCheck, glow: "group-hover:text-emerald-400" },
         { name: "ลงเวลา & ลา (GPS)", href: "/hr", icon: MapPin, glow: "group-hover:text-amber-400" },
         { name: "วิชาการ (ศธ.02)", href: "/academics", icon: GraduationCap, glow: "group-hover:text-purple-400" },
       ],
