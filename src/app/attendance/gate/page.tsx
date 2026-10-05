@@ -22,8 +22,10 @@ import {
   BellRing,
   Building,
   KeyRound,
-  ExternalLink
+  ExternalLink,
+  Calendar
 } from "lucide-react";
+import { formatThaiDate } from "@/lib/thai-date";
 
 type GateLog = {
   id: string;
@@ -154,10 +156,14 @@ export default function SmartGatePage() {
         <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-r from-emerald-950/40 via-cyan-950/30 to-indigo-950/40 border border-white/10 shadow-2xl backdrop-blur-xl">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" />
                   Access Control Terminal
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider bg-white/10 text-emerald-300 border border-white/15 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-emerald-400" />
+                  {formatThaiDate(new Date(), { showDayOfWeek: true })}
                 </span>
                 <span className="text-xs text-white/50">ความหน่วงเฉลี่ย: 12ms</span>
               </div>
@@ -482,7 +488,7 @@ export default function SmartGatePage() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-sm font-bold text-white">บันทึกประวัติการผ่านประตูแบบเรียลไทม์ (Live Logs)</h3>
+                  <h3 className="text-sm font-bold text-white">บันทึกประวัติการผ่านประตู ({formatThaiDate(new Date(), { format: "short" })})</h3>
                 </div>
                 <span className="text-xs text-white/40">{logs.length} รายการล่าสุด</span>
               </div>

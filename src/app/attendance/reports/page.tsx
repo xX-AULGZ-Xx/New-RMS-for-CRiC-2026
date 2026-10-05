@@ -23,6 +23,7 @@ import {
   Sparkles,
   PhoneCall
 } from "lucide-react";
+import { formatThaiDate } from "@/lib/thai-date";
 
 type DeptStat = {
   department: string;
@@ -115,10 +116,14 @@ export default function AttendanceReportsPage() {
         <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-r from-amber-950/40 via-orange-950/30 to-purple-950/40 border border-white/10 shadow-2xl backdrop-blur-xl">
           <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
                   <BarChart3 className="w-3 h-3" />
                   Student Affairs Analytics
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider bg-white/10 text-amber-300 border border-white/15 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-amber-400" />
+                  สถิติล่าสุด: {formatThaiDate(new Date(), { showDayOfWeek: true })}
                 </span>
                 <span className="text-xs text-white/50">เกณฑ์ สอศ. ผ่านกิจกรรม &ge; 80%</span>
               </div>

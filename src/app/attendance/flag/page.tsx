@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell";
 import { saveAttendanceBatchAction } from "@/lib/actions";
 import {
   CalendarCheck,
+  Calendar,
   CheckCircle2,
   Clock,
   UserX,
@@ -23,6 +24,7 @@ import {
   Sparkles,
   Flame
 } from "lucide-react";
+import { formatThaiDate } from "@/lib/thai-date";
 
 type StudentItem = {
   id: string;
@@ -100,10 +102,14 @@ export default function AttendanceFlagPage() {
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
               <span>พัฒนากิจการนักเรียนฯ</span>
               <span>•</span>
               <span className="text-emerald-400">Flag Ceremony Fast Check 2569</span>
+              <span>•</span>
+              <span className="text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 font-medium">
+                {formatThaiDate(date, { showDayOfWeek: true })}
+              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white mt-1 tracking-tight flex items-center space-x-3">
               <span>เช็คชื่อเข้าแถวหน้าเสาธง & โฮมรูม</span>
@@ -153,12 +159,23 @@ export default function AttendanceFlagPage() {
               <option value="MK201" className="bg-[#111827]">ปวช. 2/1 - การตลาด</option>
             </select>
 
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="text-xs font-mono font-bold px-3 py-2 rounded-xl glass-input text-white focus:outline-none"
-            />
+            {/* Thai Date Badge & Picker */}
+            <div className="relative flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 hover:border-emerald-500/40 transition">
+              <Calendar className="w-4 h-4 text-emerald-400 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[9px] text-white/40 uppercase tracking-wider font-semibold">ประจำวัน (พ.ศ.)</span>
+                <span className="text-xs font-bold text-emerald-300">
+                  {formatThaiDate(date, { showDayOfWeek: true })}
+                </span>
+              </div>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                title="คลิกเพื่อเลือกวันที่"
+              />
+            </div>
           </div>
 
           <div className="flex items-center space-x-2.5">

@@ -20,8 +20,10 @@ import {
   Check,
   BookOpen,
   Building,
-  BellRing
+  BellRing,
+  Calendar
 } from "lucide-react";
+import { formatThaiDate } from "@/lib/thai-date";
 
 export default function AttendanceHubPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,7 +40,7 @@ export default function AttendanceHubPage() {
       icon: CalendarCheck,
       iconBg: "bg-emerald-500/20 text-emerald-400 border-emerald-400/30",
       glowColor: "from-emerald-500/10 to-teal-500/10",
-      stats: "เช้าวันนี้ 08:00 • เฉลี่ยเข้าแถว 94.2%",
+      stats: `${formatThaiDate(new Date(), { format: "short" })} • เฉลี่ยเข้าแถว 94.2%`,
       actionText: "เปิดระบบเช็คชื่อหน้าเสาธง",
     },
     {
@@ -104,6 +106,10 @@ export default function AttendanceHubPage() {
                 <span className="px-3 py-1 rounded-full text-[11px] font-semibold tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 shadow-sm">
                   <ShieldCheck className="w-3.5 h-3.5" />
                   Smart Attendance Hub
+                </span>
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-emerald-300 border border-white/15 flex items-center gap-1.5 shadow-sm">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                  {formatThaiDate(new Date(), { showDayOfWeek: true })}
                 </span>
                 <span className="text-xs text-white/50 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-cyan-400" />

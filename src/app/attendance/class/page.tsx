@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell";
 import {
   GraduationCap,
   CalendarCheck,
+  Calendar,
   CheckCircle2,
   Clock,
   UserX,
@@ -20,6 +21,7 @@ import {
   HelpCircle,
   TrendingDown
 } from "lucide-react";
+import { formatThaiDate } from "@/lib/thai-date";
 
 type ClassAttendanceStudent = {
   id: string;
@@ -34,6 +36,7 @@ type ClassAttendanceStudent = {
 export default function AttendanceClassPage() {
   const [courseCode, setCourseCode] = useState("30204-2001");
   const [selectedWeek, setSelectedWeek] = useState("8");
+  const [date, setDate] = useState("2026-10-05");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSaved, setIsSaved] = useState(false);
 
@@ -102,10 +105,14 @@ export default function AttendanceClassPage() {
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
               <span>ฝ่ายวิชาการ & งานวัดผล</span>
               <span>•</span>
               <span className="text-cyan-400">สอศ. เกณฑ์เวลาเรียน 80%</span>
+              <span>•</span>
+              <span className="text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20 font-medium">
+                {formatThaiDate(date, { showDayOfWeek: true })}
+              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white mt-1 tracking-tight flex items-center space-x-3">
               <span>เช็คชื่อรายวิชา & คำนวณสิทธิ์สอบ 80% (มส.)</span>
@@ -178,7 +185,7 @@ export default function AttendanceClassPage() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div>
               <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">สัปดาห์ที่สอน</label>
               <select
@@ -192,6 +199,24 @@ export default function AttendanceClassPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* Thai Date Badge & Picker */}
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">วันที่สอน (พ.ศ.)</label>
+              <div className="relative flex items-center gap-2 px-3 py-2 rounded-xl bg-black/40 border border-white/10 hover:border-cyan-500/40 transition">
+                <Calendar className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span className="text-xs font-bold text-cyan-300">
+                  {formatThaiDate(date, { showDayOfWeek: true })}
+                </span>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  title="คลิกเพื่อเลือกวันที่"
+                />
+              </div>
             </div>
           </div>
         </div>
