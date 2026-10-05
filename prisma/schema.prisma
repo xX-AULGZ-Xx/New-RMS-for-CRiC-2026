@@ -133,6 +133,9 @@ model Document {
   stampedPdfUrl    String?
   priority         DocPriority         @default(NORMAL)
   status           DocStatus           @default(DRAFT)
+  category         String              @default("MEMO")    // INBOUND, OUTBOUND, MEMO, ORDER, CIRCULAR
+  originOrg        String?                                 // หน่วยงานต้นทาง
+  receiverOrg      String?                                 // หน่วยงานปลายทาง/ผู้รับ
   qrToken          String              @unique @default(uuid())
   creatorId        String
   creator          User                @relation(fields: [creatorId], references: [id])

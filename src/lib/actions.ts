@@ -193,3 +193,70 @@ export async function submitLeaveAction(data: {
     return { success: false, error: error.message };
   }
 }
+
+// 5. Saraban: Create New Official Document
+export async function createSarabanDocumentAction(data: {
+  category: "INBOUND" | "OUTBOUND" | "MEMO" | "ORDER" | "CIRCULAR";
+  docNumber: string;
+  title: string;
+  originOrg: string;
+  receiverOrg?: string;
+  priority: "NORMAL" | "URGENT" | "VERY_URGENT" | "MOST_URGENT";
+  abstractContent: string;
+  routingMode: "APPROVAL_CHAIN" | "CIRCULAR";
+  creatorEmail: string;
+  targetUserEmails?: string[];
+}) {
+  try {
+    const creator = await prisma.user.findUnique({
+      where: { email: data.creatorEmail },
+    });
+
+    if (!creator) {
+      return { success: false, error: "ไม่พบข้อมูลผู้สร้างเอกสารในระบบ" };
+    }
+
+    const doc = await prisma.document.create({
+      data: {
+        docNumber: data.docNumber,
+        title: data.title,
+        abstractContent: data.abstractContent,
+        category: data.category,
+        originOrg: data.originOrg,
+        receiverOrg: data.receiverOrg || null,
+        priority: data.priority,
+        status: data.routingMode === "CIRCULAR" ? "APPROVED" : "ROUTING",
+        creatorId: creator.id,
+      },
+    });
+
+    // Create routings if targets specified
+    if (data.targetUserEmails && data.targetUserEmails.length > 0) {
+      const targetUsers = await prisma.user.findMany({
+        where: { email: { in: data.targetUserEmails } },
+      });
+
+      for (let i = 0; i < data.targetUserEmails.length; i++) {
+        const u = targetUsers.find((user) => user.email === data.targetUserEmails![i]);
+        if (u) {
+          await prisma.documentRouting.create({
+            data: {
+              documentId: doc.id,
+              stepOrder: i + 1,
+              targetUserId: u.id,
+              isCompleted: false,
+              isApproved: false,
+            },
+          });
+        }
+      }
+    }
+
+    revalidatePath("/edoc");
+    revalidatePath("/dashboard");
+    return { success: true, documentId: doc.id };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
