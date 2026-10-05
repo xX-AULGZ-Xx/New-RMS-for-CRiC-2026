@@ -35,7 +35,8 @@ import {
   UserCheck,
   CheckCheck,
   ExternalLink,
-  Tag
+  Tag,
+  Upload
 } from "lucide-react";
 
 type SarabanTab = "REVIEW" | "INBOUND" | "OUTBOUND" | "ORDERS";
@@ -250,17 +251,44 @@ export default function EdocPage() {
     }));
   };
 
-  // Local File Upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  // PDF File Upload & Drag-and-drop state
+  const [fileSizeText, setFileSizeText] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+
+  const processFile = (file: File) => {
+    if (file && file.type === "application/pdf") {
       const url = URL.createObjectURL(file);
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+      setFileSizeText(`${sizeMb} MB`);
+
+      // Auto pre-fill title if empty
+      const cleanTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+
       setNewDocData((prev) => ({
         ...prev,
         hasAttachment: true,
         fileName: file.name,
         pdfBlobUrl: url,
+        title: prev.title.trim() === "" ? cleanTitle : prev.title,
       }));
+    } else {
+      alert("กรุณาเลือกไฟล์เอกสารนามสกุล .pdf เท่านั้น");
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
     }
   };
 
@@ -1406,29 +1434,114 @@ export default function EdocPage() {
                   />
                 </div>
 
-                {/* PDF File Attachment Picker */}
+                {/* Drag & Drop PDF Upload Area */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                    แนบไฟล์ PDF ต้นฉบับ (รองรับเปิดอ่านไฟล์จริงจากเครื่อง)
-                  </label>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-cyan-300 border border-white/15 text-xs font-bold cursor-pointer transition-all flex items-center space-x-2 shadow-xs">
-                      <Paperclip className="w-4 h-4" />
-                      <span>{newDocData.fileName ? "เปลี่ยนไฟล์ PDF" : "เลือกไฟล์ PDF จากเครื่อง..."}</span>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-300 flex items-center space-x-1.5">
+                      <FileText className="w-4 h-4 text-cyan-400" />
+                      <span>อัปโหลดไฟล์ PDF เอกสารต้นฉบับ / ไฟล์แนบ</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400">รองรับ PDF สูงสุด 50 MB</span>
+                  </div>
+
+                  {!newDocData.pdfBlobUrl ? (
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setIsDragging(true);
+                      }}
+                      onDragLeave={() => setIsDragging(false)}
+                      onDrop={handleDrop}
+                      className={`relative p-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center cursor-pointer ${
+                        isDragging
+                          ? "border-cyan-400 bg-cyan-500/20 scale-[1.01]"
+                          : "border-white/20 hover:border-cyan-400/50 bg-white/[0.02] hover:bg-white/[0.04]"
+                      }`}
+                    >
                       <input
                         type="file"
                         accept="application/pdf"
-                        className="hidden"
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                         onChange={handleFileUpload}
                       />
-                    </label>
-                    {newDocData.fileName && (
-                      <span className="text-xs text-emerald-300 font-mono flex items-center space-x-1 bg-emerald-500/15 border border-emerald-400/25 px-3 py-1.5 rounded-xl">
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="truncate max-w-xs">{newDocData.fileName}</span>
-                      </span>
-                    )}
-                  </div>
+                      <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-400/30 text-cyan-400 flex items-center justify-center mb-2 shadow-inner">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <p className="text-xs font-bold text-white">
+                        ลากและวางไฟล์ PDF ที่นี่ หรือ <span className="text-cyan-400 underline">คลิกเพื่อเลือกไฟล์</span>
+                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        ระบบจะดึงชื่อเรื่องจากไฟล์อัตโนมัติ และแสดงตัวอย่างบน macOS PDF Viewer ได้ทันที
+                      </p>
+                    </div>
+                  ) : (
+                    /* Uploaded File Chip / Card */
+                    <div className="p-4 rounded-2xl glass-card border border-cyan-400/30 bg-cyan-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+                      <div className="flex items-center space-x-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 flex items-center justify-center flex-shrink-0 font-bold">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-xs text-white truncate max-w-[200px] sm:max-w-xs">
+                              {newDocData.fileName}
+                            </span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                              {fileSizeText || "PDF พร้อมใช้งาน"}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            พร้อมบันทึกและเปิดอ่านผ่าน macOS PDF Document Viewer
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 self-end sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPdfViewerDoc({
+                              id: "temp-preview",
+                              category: newDocData.category,
+                              docNumber: newDocData.docNumber,
+                              dept: newDocData.originOrg,
+                              originOrg: newDocData.originOrg,
+                              receiverOrg: newDocData.receiverOrg,
+                              title: newDocData.title || newDocData.fileName,
+                              priority: newDocData.priority,
+                              status: "DRAFT",
+                              creator: "ผู้จัดทำเอกสาร",
+                              createdAt: "วันนี้",
+                              abstractContent: newDocData.abstractContent || "ไฟล์ PDF ที่เลือกจากคอมพิวเตอร์",
+                              fileName: newDocData.fileName,
+                              pdfBlobUrl: newDocData.pdfBlobUrl,
+                            });
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/30 text-xs font-bold transition-all flex items-center space-x-1"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>ดูตัวอย่าง PDF</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewDocData((prev) => ({
+                              ...prev,
+                              hasAttachment: false,
+                              fileName: "",
+                              pdfBlobUrl: "",
+                            }));
+                            setFileSizeText("");
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl glass-card hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30 text-slate-400 text-xs font-bold transition-all"
+                          title="ลบไฟล์ออก"
+                        >
+                          ลบ
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Submit & Cancel */}
