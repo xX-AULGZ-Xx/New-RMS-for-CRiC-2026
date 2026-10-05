@@ -30,13 +30,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState(DEMO_USERS[0]);
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex font-prompt relative overflow-x-hidden selection:bg-blue-500 selection:text-white">
+    <div className="h-screen h-[100dvh] bg-[#090d16] text-slate-100 flex font-prompt relative overflow-hidden selection:bg-blue-500 selection:text-white">
       {/* Ambient background glows for macOS Glassmorphism */}
       <div className="fixed top-0 left-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none -z-10"></div>
       <div className="fixed bottom-0 right-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[130px] pointer-events-none -z-10"></div>
       <div className="fixed top-1/2 right-10 w-[350px] h-[350px] bg-purple-600/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
-      {/* Floating Island Sidebar */}
+      {/* Sidebar (Fit H) */}
       <Sidebar
         collapsed={collapsed}
         setCollapsed={setCollapsed}
@@ -45,9 +45,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Floating Capsule Top Header (Dynamic Island / Capsule) */}
-        <header className="sticky top-2 z-30 mx-3 sm:mx-6 my-2 h-14 glass-island rounded-2xl px-4 flex items-center justify-between shadow-lg">
+        <header className="shrink-0 z-30 mx-3 sm:mx-6 my-2 h-14 glass-island rounded-2xl px-4 flex items-center justify-between shadow-lg">
           {/* Left: Mobile Toggle & Spotlight Search shortcut */}
           <div className="flex items-center space-x-3">
             <button

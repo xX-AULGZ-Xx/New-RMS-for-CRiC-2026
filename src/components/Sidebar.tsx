@@ -71,11 +71,11 @@ export default function Sidebar({
         />
       )}
 
-      {/* Floating Island Sidebar */}
+      {/* Full Height Sidebar (Fit H) */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 lg:my-3 lg:ml-3 lg:h-[calc(100vh-1.5rem)] glass-island rounded-3xl flex flex-col transition-all duration-300 ease-in-out lg:static ${
+        className={`fixed top-0 bottom-0 left-0 z-50 h-screen lg:h-full glass-island lg:rounded-none lg:rounded-r-3xl border-r border-white/10 flex flex-col transition-all duration-300 ease-in-out lg:static shrink-0 ${
           collapsed ? "lg:w-20" : "lg:w-64"
-        } ${mobileOpen ? "translate-x-0 w-64 m-2" : "-translate-x-full lg:translate-x-0"}`}
+        } ${mobileOpen ? "translate-x-0 w-64 shadow-2xl" : "-translate-x-full lg:translate-x-0"}`}
       >
         {/* Brand / Logo Capsule */}
         <div className="h-16 px-4 flex items-center justify-between border-b border-white/10">
