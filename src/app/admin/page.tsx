@@ -71,6 +71,135 @@ export default function AdminSettingsPage() {
     },
   });
 
+  // Auto-calculate End Date based on Start Date and Total Weeks (Friday of week N)
+  const calculateEndDate = (startDateStr: string, totalWeeks: number): string => {
+    if (!startDateStr || !totalWeeks) return "";
+    const start = new Date(startDateStr + "T00:00:00");
+    if (isNaN(start.getTime())) return "";
+
+    // Days to add: (totalWeeks - 1) * 7 + 4 (Friday of the N-th week)
+    const target = new Date(start);
+    const daysToAdd = (totalWeeks - 1) * 7 + 4;
+    target.setDate(target.getDate() + daysToAdd);
+
+    const yyyy = target.getFullYear();
+    const mm = String(target.getMonth() + 1).padStart(2, "0");
+    const dd = String(target.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // Auto-calculate Midterm Date (Monday of midtermWeek)
+  const calculateMidtermDate = (startDateStr: string, midtermWeek: number): string => {
+    if (!startDateStr || !midtermWeek) return "";
+    const start = new Date(startDateStr + "T00:00:00");
+    if (isNaN(start.getTime())) return "";
+    const target = new Date(start);
+    target.setDate(target.getDate() + (midtermWeek - 1) * 7);
+    const yyyy = target.getFullYear();
+    const mm = String(target.getMonth() + 1).padStart(2, "0");
+    const dd = String(target.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // Auto-calculate Final Date (Monday of finalWeek)
+  const calculateFinalDate = (startDateStr: string, finalWeek: number): string => {
+    if (!startDateStr || !finalWeek) return "";
+    const start = new Date(startDateStr + "T00:00:00");
+    if (isNaN(start.getTime())) return "";
+    const target = new Date(start);
+    target.setDate(target.getDate() + (finalWeek - 1) * 7);
+    const yyyy = target.getFullYear();
+    const mm = String(target.getMonth() + 1).padStart(2, "0");
+    const dd = String(target.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // Handler when VC Start Date changes -> Auto calculate End Date, Midterm Date, Final Date
+  const handleVcStartDateChange = (newStartDate: string) => {
+    const weeks = termCalendarSettings.vc.totalWeeks;
+    const autoEndDate = calculateEndDate(newStartDate, weeks);
+    const autoMidterm = calculateMidtermDate(newStartDate, termCalendarSettings.vc.midtermWeek);
+    const autoFinal = calculateFinalDate(newStartDate, weeks);
+
+    setTermCalendarSettings((prev) => ({
+      ...prev,
+      vc: {
+        ...prev.vc,
+        startDate: newStartDate,
+        endDate: autoEndDate,
+        midtermDate: autoMidterm,
+        finalDate: autoFinal,
+        finalWeek: weeks,
+      },
+    }));
+  };
+
+  // Handler when VC Total Weeks changes -> Auto calculate End Date & Final Date
+  const handleVcWeeksChange = (newWeeks: number) => {
+    const weeks = Math.max(1, newWeeks || 18);
+    const startDate = termCalendarSettings.vc.startDate;
+    const autoEndDate = calculateEndDate(startDate, weeks);
+    const autoFinal = calculateFinalDate(startDate, weeks);
+    const midtermWeek = Math.round(weeks / 2);
+    const autoMidterm = calculateMidtermDate(startDate, midtermWeek);
+
+    setTermCalendarSettings((prev) => ({
+      ...prev,
+      vc: {
+        ...prev.vc,
+        totalWeeks: weeks,
+        endDate: autoEndDate,
+        finalWeek: weeks,
+        finalDate: autoFinal,
+        midtermWeek: midtermWeek,
+        midtermDate: autoMidterm,
+      },
+    }));
+  };
+
+  // Handler when HVC Start Date changes -> Auto calculate End Date, Midterm Date, Final Date
+  const handleHvcStartDateChange = (newStartDate: string) => {
+    const weeks = termCalendarSettings.hvc.totalWeeks;
+    const autoEndDate = calculateEndDate(newStartDate, weeks);
+    const autoMidterm = calculateMidtermDate(newStartDate, termCalendarSettings.hvc.midtermWeek);
+    const autoFinal = calculateFinalDate(newStartDate, weeks);
+
+    setTermCalendarSettings((prev) => ({
+      ...prev,
+      hvc: {
+        ...prev.hvc,
+        startDate: newStartDate,
+        endDate: autoEndDate,
+        midtermDate: autoMidterm,
+        finalDate: autoFinal,
+        finalWeek: weeks,
+      },
+    }));
+  };
+
+  // Handler when HVC Total Weeks changes -> Auto calculate End Date & Final Date
+  const handleHvcWeeksChange = (newWeeks: number) => {
+    const weeks = Math.max(1, newWeeks || 15);
+    const startDate = termCalendarSettings.hvc.startDate;
+    const autoEndDate = calculateEndDate(startDate, weeks);
+    const autoFinal = calculateFinalDate(startDate, weeks);
+    const midtermWeek = Math.round(weeks / 2);
+    const autoMidterm = calculateMidtermDate(startDate, midtermWeek);
+
+    setTermCalendarSettings((prev) => ({
+      ...prev,
+      hvc: {
+        ...prev.hvc,
+        totalWeeks: weeks,
+        endDate: autoEndDate,
+        finalWeek: weeks,
+        finalDate: autoFinal,
+        midtermWeek: midtermWeek,
+        midtermDate: autoMidterm,
+      },
+    }));
+  };
+
   // College settings state
   const [collegeSettings, setCollegeSettings] = useState({
     collegeNameTh: "วิทยาลัยอาชีวศึกษา CRiC",
@@ -419,10 +548,7 @@ export default function AdminSettingsPage() {
                       <input
                         type="date"
                         value={termCalendarSettings.vc.startDate}
-                        onChange={(e) => setTermCalendarSettings({
-                          ...termCalendarSettings,
-                          vc: { ...termCalendarSettings.vc, startDate: e.target.value }
-                        })}
+                        onChange={(e) => handleVcStartDateChange(e.target.value)}
                         className="w-full text-xs font-mono font-bold p-2.5 rounded-xl glass-input text-emerald-300 focus:outline-none"
                       />
                     </div>
@@ -433,7 +559,12 @@ export default function AdminSettingsPage() {
 
                   {/* End Date */}
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-300">วันปิดภาคเรียน (Term End)</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-slate-300">วันปิดภาคเรียน (Term End)</label>
+                      <span className="text-[10px] text-emerald-300 bg-emerald-500/15 border border-emerald-500/25 px-2 py-0.5 rounded-full font-medium">
+                        ✨ Auto {termCalendarSettings.vc.totalWeeks} สัปดาห์
+                      </span>
+                    </div>
                     <div className="relative">
                       <input
                         type="date"
@@ -461,10 +592,7 @@ export default function AdminSettingsPage() {
                         min="12"
                         max="20"
                         value={termCalendarSettings.vc.totalWeeks}
-                        onChange={(e) => setTermCalendarSettings({
-                          ...termCalendarSettings,
-                          vc: { ...termCalendarSettings.vc, totalWeeks: parseInt(e.target.value) || 18 }
-                        })}
+                        onChange={(e) => handleVcWeeksChange(parseInt(e.target.value) || 18)}
                         className="w-14 px-2 py-1 font-mono font-bold text-xs rounded-lg glass-input text-white text-center"
                       />
                       <span className="font-bold text-emerald-400">สัปดาห์</span>
@@ -565,10 +693,7 @@ export default function AdminSettingsPage() {
                       <input
                         type="date"
                         value={termCalendarSettings.hvc.startDate}
-                        onChange={(e) => setTermCalendarSettings({
-                          ...termCalendarSettings,
-                          hvc: { ...termCalendarSettings.hvc, startDate: e.target.value }
-                        })}
+                        onChange={(e) => handleHvcStartDateChange(e.target.value)}
                         className="w-full text-xs font-mono font-bold p-2.5 rounded-xl glass-input text-purple-300 focus:outline-none"
                       />
                     </div>
@@ -579,7 +704,12 @@ export default function AdminSettingsPage() {
 
                   {/* End Date */}
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-300">วันปิดภาคเรียน (Term End)</label>
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[11px] font-bold text-slate-300">วันปิดภาคเรียน (Term End)</label>
+                      <span className="text-[10px] text-purple-300 bg-purple-500/15 border border-purple-500/25 px-2 py-0.5 rounded-full font-medium">
+                        ✨ Auto {termCalendarSettings.hvc.totalWeeks} สัปดาห์
+                      </span>
+                    </div>
                     <div className="relative">
                       <input
                         type="date"
@@ -607,10 +737,7 @@ export default function AdminSettingsPage() {
                         min="10"
                         max="18"
                         value={termCalendarSettings.hvc.totalWeeks}
-                        onChange={(e) => setTermCalendarSettings({
-                          ...termCalendarSettings,
-                          hvc: { ...termCalendarSettings.hvc, totalWeeks: parseInt(e.target.value) || 15 }
-                        })}
+                        onChange={(e) => handleHvcWeeksChange(parseInt(e.target.value) || 15)}
                         className="w-14 px-2 py-1 font-mono font-bold text-xs rounded-lg glass-input text-white text-center"
                       />
                       <span className="font-bold text-purple-400">สัปดาห์</span>
