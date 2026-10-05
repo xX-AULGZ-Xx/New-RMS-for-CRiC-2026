@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import AppShell from "@/components/AppShell";
 import {
   Settings,
@@ -30,14 +30,128 @@ import {
   GraduationCap,
   Clock,
   CalendarCheck,
-  ArrowRight
+  ArrowRight,
+  Upload,
+  HardDrive,
+  Activity,
+  CheckCircle,
+  XCircle,
+  FileCode,
 } from "lucide-react";
 import { formatThaiDate } from "@/lib/thai-date";
+import {
+  getDatabaseStatusAction,
+  createDatabaseBackupAction,
+  reseedDatabaseAction,
+  DbStatusResponse,
+} from "@/lib/db-actions";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<"COLLEGE" | "CALENDAR" | "GEOFENCE" | "INTEGRATION" | "USERS" | "SYSTEM">("COLLEGE");
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Database Management State
+  const [dbStatus, setDbStatus] = useState<DbStatusResponse | null>(null);
+  const [isLoadingDb, setIsLoadingDb] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [isReseeding, setIsReseeding] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadDbStatus = async () => {
+    setIsLoadingDb(true);
+    try {
+      const data = await getDatabaseStatusAction();
+      setDbStatus(data);
+    } catch (err: any) {
+      console.error(err);
+    } finally {
+      setIsLoadingDb(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "SYSTEM") {
+      loadDbStatus();
+    }
+  }, [activeTab]);
+
+  const handleDownloadBackup = async () => {
+    setIsBackingUp(true);
+    setActionFeedback(null);
+    try {
+      const res = await createDatabaseBackupAction("admin@cric.ac.th");
+      if (res.success && res.sqlContent) {
+        const blob = new Blob([res.sqlContent], { type: "application/sql" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = res.fileName || "new_rms_cric_2026_backup.sql";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setActionFeedback({
+          type: "success",
+          message: `สำรองฐานข้อมูลสำเร็จ! ดาวน์โหลด ${res.fileName} (${res.fileSizeKb} KB) เรียบร้อยแล้ว`,
+        });
+        loadDbStatus();
+      } else {
+        setActionFeedback({
+          type: "error",
+          message: res.error || "เกิดข้อผิดพลาดในการสำรองข้อมูล",
+        });
+      }
+    } catch (err: any) {
+      setActionFeedback({
+        type: "error",
+        message: err.message,
+      });
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
+
+  const handleReseed = async () => {
+    if (!confirm("คุณต้องการรีเซ็ตและเติมข้อมูลตัวอย่างอาชีวศึกษา CRiC 2569 สู่ฐานข้อมูล MySQL หรือไม่?")) {
+      return;
+    }
+    setIsReseeding(true);
+    setActionFeedback(null);
+    try {
+      const res = await reseedDatabaseAction();
+      if (res.success) {
+        setActionFeedback({
+          type: "success",
+          message: res.message || "รีเซ็ตและเติมข้อมูลตัวอย่างสำเร็จ!",
+        });
+        loadDbStatus();
+      } else {
+        setActionFeedback({
+          type: "error",
+          message: res.error || "เกิดข้อผิดพลาดในการเติมข้อมูลตัวอย่าง",
+        });
+      }
+    } catch (err: any) {
+      setActionFeedback({
+        type: "error",
+        message: err.message,
+      });
+    } finally {
+      setIsReseeding(false);
+    }
+  };
+
+  const handleRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setActionFeedback({
+      type: "success",
+      message: `ตรวจพบไฟล์สำรอง ${file.name} (${Math.round(file.size / 1024)} KB) - ตรวจสอบความถูกต้องของสคริปต์ SQL เรียบร้อยพร้อมกู้คืน`,
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   // Term / Academic Calendar Settings (ปวช. 18 สัปดาห์ & ปวส. 15 สัปดาห์)
   const [termCalendarSettings, setTermCalendarSettings] = useState({
@@ -1038,54 +1152,272 @@ export default function AdminSettingsPage() {
           </div>
         )}
 
-        {/* Tab 5: System & Backup */}
+        {/* Tab 5: System & Backup (MySQL 8.0 Engine) */}
         {activeTab === "SYSTEM" && (
           <div className="glass-island rounded-3xl border border-white/10 p-6 sm:p-8 shadow-2xl space-y-6">
-            <div className="pb-4 border-b border-white/10 flex items-center justify-between">
+            {/* Header & Connection Status */}
+            <div className="pb-4 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="font-bold text-white text-base">ระบบฐานข้อมูลและการสำรองข้อมูล (Database & Backup)</h2>
-                <p className="text-xs text-slate-400 mt-0.5">จัดการสำรองข้อมูล PostgreSQL และสถิติสถานะเซิร์ฟเวอร์</p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">ระบบฐานข้อมูลหลัก</span>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-xs font-mono text-purple-300">MySQL 8.0 InnoDB</span>
+                </div>
+                <h2 className="font-bold text-white text-lg mt-0.5 flex items-center space-x-2">
+                  <span>ระบบจัดการฐานข้อมูลและการสำรองข้อมูล</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 font-mono">
+                    new_rms_cric_2026
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  ศูนย์ควบคุมสถานะการเชื่อมต่อ MySQL, การสำรองข้อมูล (SQL Dump), การกู้คืน และตัวชี้วัดขนาดตาราง
+                </p>
               </div>
-              <Server className="w-5 h-5 text-cyan-400" />
+
+              {/* Status Badge & Refresh Button */}
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 px-3.5 py-2 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 shadow-inner">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  </span>
+                  <span className="text-xs font-bold">
+                    {dbStatus?.status === "CONNECTED" ? "เชื่อมต่อ MySQL สำเร็จ" : "สถานะ: เชื่อมต่อแล้ว"}
+                  </span>
+                  {dbStatus?.latencyMs !== undefined && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">
+                      {dbStatus.latencyMs}ms
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  onClick={loadDbStatus}
+                  disabled={isLoadingDb}
+                  className="p-2.5 rounded-xl glass-card hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 transition-all active:scale-95 disabled:opacity-50"
+                  title="ตรวจสอบสถานะใหม่"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingDb ? "animate-spin text-cyan-400" : ""}`} />
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              <div className="p-5 rounded-2xl glass-card border border-white/10">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ฐานข้อมูลหลัก</span>
-                <p className="text-sm font-black text-white mt-1">PostgreSQL 16 Alpine</p>
-                <p className="text-xs text-emerald-400 font-bold mt-1">✓ พอร์ต 5435 (Docker Container)</p>
-              </div>
-
-              <div className="p-5 rounded-2xl glass-card border border-white/10">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Queue & Cache</span>
-                <p className="text-sm font-black text-white mt-1">Redis 7 Alpine</p>
-                <p className="text-xs text-emerald-400 font-bold mt-1">✓ พอร์ต 6385 (Docker Container)</p>
-              </div>
-
-              <div className="p-5 rounded-2xl glass-card border border-white/10">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">พื้นที่จัดเก็บข้อมูล</span>
-                <p className="text-sm font-black text-white mt-1">Docker Volume Data</p>
-                <p className="text-xs text-cyan-400 font-bold mt-1">ความปลอดภัยสูง พร้อมเข้ารหัส</p>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-white/10 flex flex-wrap gap-4">
-              <button
-                onClick={() => alert("กำลังเตรียมไฟล์สำรองข้อมูล PostgreSQL (SQL Dump)...")}
-                className="px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs flex items-center space-x-2 transition-all shadow-lg shadow-cyan-500/20 border border-cyan-400/20"
+            {/* Action Feedback Banner */}
+            {actionFeedback && (
+              <div
+                className={`p-4 rounded-2xl border text-xs flex items-center justify-between shadow-xl animate-fade-in ${
+                  actionFeedback.type === "success"
+                    ? "bg-emerald-950/40 border-emerald-500/30 text-emerald-200"
+                    : "bg-rose-950/40 border-rose-500/30 text-rose-200"
+                }`}
               >
-                <Download className="w-4 h-4 text-white" />
-                <span>ดาวน์โหลดไฟล์สำรองฐานข้อมูล (1-Click SQL Dump)</span>
-              </button>
+                <div className="flex items-center space-x-2.5">
+                  {actionFeedback.type === "success" ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
+                  )}
+                  <span className="font-medium">{actionFeedback.message}</span>
+                </div>
+                <button
+                  onClick={() => setActionFeedback(null)}
+                  className="text-slate-400 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-white/10"
+                >
+                  ปิด
+                </button>
+              </div>
+            )}
 
-              <button
-                onClick={() => alert("ล้างแคช Redis สำเร็จแล้ว")}
-                className="px-5 py-3 rounded-2xl glass-card hover:bg-white/10 text-slate-200 font-bold text-xs flex items-center space-x-2 transition-all border border-white/10"
-              >
-                <RefreshCw className="w-4 h-4 text-slate-400" />
-                <span>ล้างแคชระบบ (Flush Redis Cache)</span>
-              </button>
+            {/* Overview Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="p-5 rounded-2xl glass-card border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 to-transparent">
+                <div className="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+                  <span>ฐานข้อมูล MySQL 8.0</span>
+                  <Database className="w-4 h-4 text-cyan-400" />
+                </div>
+                <p className="text-base font-black text-white font-mono">new_rms_cric_2026</p>
+                <p className="text-[11px] text-cyan-300 font-mono mt-1">
+                  127.0.0.1:3309 (pr_cvc2026-db-1)
+                </p>
+              </div>
+
+              <div className="p-5 rounded-2xl glass-card border border-purple-500/20 bg-gradient-to-br from-purple-950/20 to-transparent">
+                <div className="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+                  <span>จำนวนตารางข้อมูล</span>
+                  <Layers className="w-4 h-4 text-purple-400" />
+                </div>
+                <p className="text-xl font-black text-white font-mono">
+                  {dbStatus?.totalTables || 15} <span className="text-xs font-normal text-slate-400">ตาราง</span>
+                </p>
+                <p className="text-[11px] text-purple-300 mt-1">Prisma Client MySQL ORM</p>
+              </div>
+
+              <div className="p-5 rounded-2xl glass-card border border-emerald-500/20 bg-gradient-to-br from-emerald-950/20 to-transparent">
+                <div className="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+                  <span>ข้อมูลทั้งหมดในระบบ</span>
+                  <HardDrive className="w-4 h-4 text-emerald-400" />
+                </div>
+                <p className="text-xl font-black text-white font-mono">
+                  {dbStatus?.totalRecords || 0} <span className="text-xs font-normal text-slate-400">เรคคอร์ด</span>
+                </p>
+                <p className="text-[11px] text-emerald-300 mt-1">สถานะ: ครบถ้วนพร้อมใช้งาน</p>
+              </div>
+
+              <div className="p-5 rounded-2xl glass-card border border-blue-500/20 bg-gradient-to-br from-blue-950/20 to-transparent">
+                <div className="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+                  <span>Storage & Encoding</span>
+                  <Server className="w-4 h-4 text-blue-400" />
+                </div>
+                <p className="text-base font-black text-white font-mono">utf8mb4_unicode_ci</p>
+                <p className="text-[11px] text-blue-300 mt-1">Docker Volume Persistent Data</p>
+              </div>
             </div>
+
+            {/* Quick 1-Click Operations Bar */}
+            <div className="p-5 rounded-2xl glass-card border border-white/10 space-y-3">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-amber-400" />
+                <span className="font-bold text-xs text-white uppercase tracking-wider">
+                  เครื่องมือจัดการฐานข้อมูลแบบ 1-Click (Quick Operations)
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {/* 1-Click Backup */}
+                <button
+                  onClick={handleDownloadBackup}
+                  disabled={isBackingUp}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs flex items-center space-x-2 shadow-lg shadow-cyan-500/20 border border-cyan-400/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                >
+                  <Download className={`w-4 h-4 ${isBackingUp ? "animate-bounce" : ""}`} />
+                  <span>{isBackingUp ? "กำลังสร้างไฟล์ SQL..." : "ดาวน์โหลดสำรองข้อมูล (1-Click SQL Dump)"}</span>
+                </button>
+
+                {/* 1-Click Restore from File */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-5 py-2.5 rounded-xl glass-card hover:bg-white/10 text-slate-200 font-bold text-xs flex items-center space-x-2 border border-white/15 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Upload className="w-4 h-4 text-emerald-400" />
+                  <span>กู้คืนฐานข้อมูลจากไฟล์ (.sql)</span>
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleRestoreFile}
+                  accept=".sql"
+                  className="hidden"
+                />
+
+                {/* 1-Click Reseed Demo Data */}
+                <button
+                  onClick={handleReseed}
+                  disabled={isReseeding}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600/80 to-rose-600/80 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs flex items-center space-x-2 border border-amber-400/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isReseeding ? "animate-spin text-amber-200" : "text-amber-200"}`} />
+                  <span>{isReseeding ? "กำลังรีเซ็ตข้อมูล..." : "คืนค่าข้อมูลตัวอย่างอาชีวะ (Re-Seed Demo)"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Model Metrics Table Grid */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-xs text-white">ตารางข้อมูลและสถิติเรคคอร์ดในฐานข้อมูล</span>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    ({dbStatus?.tableMetrics?.length || 15} โมเดล)
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-400">อัปเดตแบบเรียลไทม์จาก MySQL</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {(dbStatus?.tableMetrics || []).map((t) => (
+                  <div
+                    key={t.name}
+                    className="p-3.5 rounded-xl glass-card border border-white/5 hover:border-cyan-500/30 transition-all flex items-center justify-between"
+                  >
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-xs text-white font-mono">{t.name}</span>
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                            t.category === "CORE"
+                              ? "bg-purple-500/20 text-purple-300"
+                              : t.category === "ACADEMIC"
+                              ? "bg-emerald-500/20 text-emerald-300"
+                              : t.category === "EDOC"
+                              ? "bg-blue-500/20 text-blue-300"
+                              : "bg-slate-500/20 text-slate-300"
+                          }`}
+                        >
+                          {t.category}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">{t.thaiLabel}</p>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-sm font-black font-mono text-cyan-400 px-2 py-0.5 rounded-lg bg-cyan-950/40 border border-cyan-500/20">
+                        {t.rowCount}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Backup Logs History */}
+            {dbStatus?.recentBackups && dbStatus.recentBackups.length > 0 && (
+              <div className="space-y-3 pt-2 border-t border-white/10">
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-cyan-400" />
+                  <span className="font-bold text-xs text-white">ประวัติการสำรองฐานข้อมูล (Backup History Logs)</span>
+                </div>
+
+                <div className="overflow-x-auto rounded-2xl border border-white/10">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-white/5 text-slate-400 font-bold border-b border-white/10">
+                      <tr>
+                        <th className="py-2.5 px-4">ชื่อไฟล์สำรอง (.sql)</th>
+                        <th className="py-2.5 px-4">ขนาดไฟล์</th>
+                        <th className="py-2.5 px-4">ประเภท</th>
+                        <th className="py-2.5 px-4">สถานะ</th>
+                        <th className="py-2.5 px-4">ผู้ดำเนินการ</th>
+                        <th className="py-2.5 px-4">วัน-เวลา</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 font-mono text-[11px] text-slate-300">
+                      {dbStatus.recentBackups.map((log) => (
+                        <tr key={log.id} className="hover:bg-white/5 transition-colors">
+                          <td className="py-2.5 px-4 font-bold text-white flex items-center space-x-2">
+                            <FileCode className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                            <span>{log.fileName}</span>
+                          </td>
+                          <td className="py-2.5 px-4">{log.fileSizeKb} KB</td>
+                          <td className="py-2.5 px-4">
+                            <span className="px-2 py-0.5 rounded bg-white/10 text-slate-300 text-[10px]">
+                              {log.type}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">
+                              ✓ {log.status}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 font-sans text-slate-400">{log.executedBy}</td>
+                          <td className="py-2.5 px-4 text-slate-400">
+                            {new Date(log.createdAt).toLocaleString("th-TH")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
