@@ -24,13 +24,52 @@ import {
   Edit2,
   Sparkles,
   Server,
-  Layers
+  Layers,
+  CalendarRange,
+  Calendar,
+  GraduationCap,
+  Clock,
+  CalendarCheck,
+  ArrowRight
 } from "lucide-react";
+import { formatThaiDate } from "@/lib/thai-date";
 
 export default function AdminSettingsPage() {
-  const [activeTab, setActiveTab] = useState<"COLLEGE" | "GEOFENCE" | "INTEGRATION" | "USERS" | "SYSTEM">("COLLEGE");
+  const [activeTab, setActiveTab] = useState<"COLLEGE" | "CALENDAR" | "GEOFENCE" | "INTEGRATION" | "USERS" | "SYSTEM">("COLLEGE");
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Term / Academic Calendar Settings (ปวช. 18 สัปดาห์ & ปวส. 15 สัปดาห์)
+  const [termCalendarSettings, setTermCalendarSettings] = useState({
+    academicYear: "2569",
+    semester: "1",
+    // ปวช. (18 สัปดาห์)
+    vc: {
+      totalWeeks: 18,
+      startDate: "2026-08-17",
+      endDate: "2026-12-18",
+      midtermWeek: 9,
+      midtermDate: "2026-10-12",
+      finalWeek: 18,
+      finalDate: "2026-12-14",
+      gradeDeadline: "2026-12-25",
+      status: "OPEN" as "OPEN" | "EXAM" | "CLOSED",
+      note: "จัดการเรียนการสอนในสถานศึกษาเต็มเวลา 18 สัปดาห์ ตามระเบียบ สอศ. 2569",
+    },
+    // ปวส. (15 สัปดาห์)
+    hvc: {
+      totalWeeks: 15,
+      startDate: "2026-08-17",
+      endDate: "2026-11-27",
+      midtermWeek: 8,
+      midtermDate: "2026-10-05",
+      finalWeek: 15,
+      finalDate: "2026-11-23",
+      gradeDeadline: "2026-12-04",
+      status: "OPEN" as "OPEN" | "EXAM" | "CLOSED",
+      note: "เรียนในสถานศึกษา 15 สัปดาห์ + เตรียมฝึกงาน/ปฏิบัติงานในสถานประกอบการ 3 สัปดาห์",
+    },
+  });
 
   // College settings state
   const [collegeSettings, setCollegeSettings] = useState({
@@ -141,6 +180,7 @@ export default function AdminSettingsPage() {
         <div className="flex items-center space-x-2 overflow-x-auto pb-1 glass-island p-2 rounded-2xl border border-white/10 shadow-lg">
           {[
             { id: "COLLEGE", label: "ข้อมูลสถานศึกษา", icon: Building2 },
+            { id: "CALENDAR", label: "กำหนดการเปิด-ปิดภาคเรียน (ปวช./ปวส.)", icon: CalendarRange },
             { id: "GEOFENCE", label: "พิกัด GPS & Wi-Fi", icon: MapPin },
             { id: "INTEGRATION", label: "API & เชื่อมต่อภายนอก", icon: KeyRound },
             { id: "USERS", label: "จัดการผู้ใช้ & สิทธิ์", icon: Users },
@@ -269,7 +309,388 @@ export default function AdminSettingsPage() {
           </div>
         )}
 
-        {/* Tab 2: Geofencing & Wi-Fi Settings */}
+        {/* Tab 2: Term Calendar Settings (ปวช. 18 สัปดาห์ & ปวส. 15 สัปดาห์) */}
+        {activeTab === "CALENDAR" && (
+          <div className="space-y-6">
+            {/* Header Box */}
+            <div className="glass-island rounded-3xl border border-white/10 p-6 sm:p-8 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+                    <CalendarRange className="w-3 h-3" />
+                    Academic Term & Calendar Control
+                  </span>
+                  <span className="text-xs text-slate-400">เกณฑ์มาตรฐาน สอศ. 2569</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
+                  <span>กำหนดการเปิด - ปิดภาคเรียน & สัปดาห์การสอน</span>
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+                  ตั้งค่าช่วงเวลาเปิด-ปิดภาคเรียน กำหนดสัปดาห์เรียนจริง วันสอบกลางภาค และวันสอบปลายภาค แยกตามระดับ ปวช. (18 สัปดาห์) และ ปวส. (15 สัปดาห์ + ฝึกงาน 3 สัปดาห์) โดยระบบจะซิงค์ข้อมูลไปยังระบบเช็คชื่อรายวิชาและงานวัดผล ศธ.02 อัตโนมัติ
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-bold text-xs flex items-center space-x-2 transition-all shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95 disabled:opacity-50"
+                >
+                  {isSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  <span>บันทึกกำหนดการภาคเรียน</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Academic Term Selector Bar */}
+            <div className="glass-island p-4 rounded-3xl border border-white/10 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-4 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 font-semibold">ปีการศึกษา:</span>
+                  <input
+                    type="text"
+                    value={termCalendarSettings.academicYear}
+                    onChange={(e) => setTermCalendarSettings({ ...termCalendarSettings, academicYear: e.target.value })}
+                    className="w-20 px-2.5 py-1 text-xs font-mono font-bold rounded-xl glass-input text-cyan-300 focus:outline-none text-center"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 font-semibold">ภาคเรียน:</span>
+                  <select
+                    value={termCalendarSettings.semester}
+                    onChange={(e) => setTermCalendarSettings({ ...termCalendarSettings, semester: e.target.value })}
+                    className="px-3 py-1 text-xs font-bold rounded-xl glass-input text-white focus:outline-none cursor-pointer"
+                  >
+                    <option value="1" className="bg-[#111827]">ภาคเรียนที่ 1</option>
+                    <option value="2" className="bg-[#111827]">ภาคเรียนที่ 2</option>
+                    <option value="3" className="bg-[#111827]">ภาคเรียนฤดูร้อน (Summer)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-purple-300 bg-purple-500/10 border border-purple-500/20 px-3 py-1 rounded-xl">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>สถานะระบบ: เปิดให้เจ้าหน้าที่และงานทะเบียนปรับแก้กำหนดการได้ตลอดภาคเรียน</span>
+              </div>
+            </div>
+
+            {/* Dual Grid: ปวช. 18 สัปดาห์ VS ปวส. 15 สัปดาห์ */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Card 1: ระดับ ปวช. (18 สัปดาห์) */}
+              <div className="glass-island rounded-3xl border border-emerald-500/30 p-6 sm:p-7 shadow-2xl relative overflow-hidden space-y-5 bg-gradient-to-br from-emerald-950/20 via-slate-900/60 to-slate-900/60">
+                <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold shadow-inner">
+                      <GraduationCap className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-white text-base">ระดับ ปวช. (18 สัปดาห์)</h3>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          มาตรฐาน สอศ.
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">ประกาศนียบัตรวิชาชีพ ชั้นปีที่ 1 - 3</p>
+                    </div>
+                  </div>
+
+                  {/* Status Indicator */}
+                  <select
+                    value={termCalendarSettings.vc.status}
+                    onChange={(e) => setTermCalendarSettings({
+                      ...termCalendarSettings,
+                      vc: { ...termCalendarSettings.vc, status: e.target.value as any }
+                    })}
+                    className="text-xs font-bold px-3 py-1.5 rounded-xl glass-input text-emerald-300 border-emerald-500/30 focus:outline-none"
+                  >
+                    <option value="OPEN" className="bg-[#111827] text-emerald-400">🟢 เปิดการเรียนการสอน</option>
+                    <option value="EXAM" className="bg-[#111827] text-amber-400">🟡 สัปดาห์สอบวัดผล</option>
+                    <option value="CLOSED" className="bg-[#111827] text-rose-400">🔴 ปิดภาคเรียน</option>
+                  </select>
+                </div>
+
+                {/* Date Ranges */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Start Date */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-300">วันเปิดภาคเรียน (Term Start)</label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={termCalendarSettings.vc.startDate}
+                        onChange={(e) => setTermCalendarSettings({
+                          ...termCalendarSettings,
+                          vc: { ...termCalendarSettings.vc, startDate: e.target.value }
+                        })}
+                        className="w-full text-xs font-mono font-bold p-2.5 rounded-xl glass-input text-emerald-300 focus:outline-none"
+                      />
+                    </div>
+                    <p className="text-[10px] text-emerald-400/80 font-medium">
+                      {formatThaiDate(termCalendarSettings.vc.startDate, { showDayOfWeek: true })}
+                    </p>
+                  </div>
+
+                  {/* End Date */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-300">วันปิดภาคเรียน (Term End)</label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={termCalendarSettings.vc.endDate}
+                        onChange={(e) => setTermCalendarSettings({
+                          ...termCalendarSettings,
+                          vc: { ...termCalendarSettings.vc, endDate: e.target.value }
+                        })}
+                        className="w-full text-xs font-mono font-bold p-2.5 rounded-xl glass-input text-emerald-300 focus:outline-none"
+                      />
+                    </div>
+                    <p className="text-[10px] text-emerald-400/80 font-medium">
+                      {formatThaiDate(termCalendarSettings.vc.endDate, { showDayOfWeek: true })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Weeks and Exams Grid */}
+                <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-black/40 border border-white/10 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">จำนวนสัปดาห์เรียน</span>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input
+                        type="number"
+                        min="12"
+                        max="20"
+                        value={termCalendarSettings.vc.totalWeeks}
+                        onChange={(e) => setTermCalendarSettings({
+                          ...termCalendarSettings,
+                          vc: { ...termCalendarSettings.vc, totalWeeks: parseInt(e.target.value) || 18 }
+                        })}
+                        className="w-14 px-2 py-1 font-mono font-bold text-xs rounded-lg glass-input text-white text-center"
+                      />
+                      <span className="font-bold text-emerald-400">สัปดาห์</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">สอบกลางภาค</span>
+                    <div className="mt-1 font-bold text-white text-xs">
+                      สัปดาห์ที่ {termCalendarSettings.vc.midtermWeek}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      ({formatThaiDate(termCalendarSettings.vc.midtermDate, { format: "short" })})
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">สอบปลายภาค</span>
+                    <div className="mt-1 font-bold text-white text-xs">
+                      สัปดาห์ที่ {termCalendarSettings.vc.finalWeek}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      ({formatThaiDate(termCalendarSettings.vc.finalDate, { format: "short" })})
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400 font-medium">ความคืบหน้าภาคเรียน ปวช. (สัปดาห์ที่ 8 / {termCalendarSettings.vc.totalWeeks})</span>
+                    <span className="font-bold text-emerald-400">
+                      {((8 / termCalendarSettings.vc.totalWeeks) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-black/50 overflow-hidden p-0.5 border border-white/5">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500"
+                      style={{ width: `${(8 / termCalendarSettings.vc.totalWeeks) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Note */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">หมายเหตุหลักสูตร ปวช.</label>
+                  <input
+                    type="text"
+                    value={termCalendarSettings.vc.note}
+                    onChange={(e) => setTermCalendarSettings({
+                      ...termCalendarSettings,
+                      vc: { ...termCalendarSettings.vc, note: e.target.value }
+                    })}
+                    className="w-full text-xs p-2.5 rounded-xl glass-input text-slate-300 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Card 2: ระดับ ปวส. (15 สัปดาห์) */}
+              <div className="glass-island rounded-3xl border border-purple-500/30 p-6 sm:p-7 shadow-2xl relative overflow-hidden space-y-5 bg-gradient-to-br from-purple-950/20 via-slate-900/60 to-slate-900/60">
+                <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold shadow-inner">
+                      <GraduationCap className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-white text-base">ระดับ ปวส. (15 สัปดาห์)</h3>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          หลักสูตรทวิภาคี
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">ประกาศนียบัตรวิชาชีพชั้นสูง ชั้นปีที่ 1 - 2</p>
+                    </div>
+                  </div>
+
+                  {/* Status Indicator */}
+                  <select
+                    value={termCalendarSettings.hvc.status}
+                    onChange={(e) => setTermCalendarSettings({
+                      ...termCalendarSettings,
+                      hvc: { ...termCalendarSettings.hvc, status: e.target.value as any }
+                    })}
+                    className="text-xs font-bold px-3 py-1.5 rounded-xl glass-input text-purple-300 border-purple-500/30 focus:outline-none"
+                  >
+                    <option value="OPEN" className="bg-[#111827] text-purple-400">🟢 เปิดการเรียนการสอน</option>
+                    <option value="EXAM" className="bg-[#111827] text-amber-400">🟡 สัปดาห์สอบวัดผล</option>
+                    <option value="CLOSED" className="bg-[#111827] text-rose-400">🔴 ปิดภาคเรียน</option>
+                  </select>
+                </div>
+
+                {/* Date Ranges */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Start Date */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-300">วันเปิดภาคเรียน (Term Start)</label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={termCalendarSettings.hvc.startDate}
+                        onChange={(e) => setTermCalendarSettings({
+                          ...termCalendarSettings,
+                          hvc: { ...termCalendarSettings.hvc, startDate: e.target.value }
+                        })}
+                        className="w-full text-xs font-mono font-bold p-2.5 rounded-xl glass-input text-purple-300 focus:outline-none"
+                      />
+                    </div>
+                    <p className="text-[10px] text-purple-400/80 font-medium">
+                      {formatThaiDate(termCalendarSettings.hvc.startDate, { showDayOfWeek: true })}
+                    </p>
+                  </div>
+
+                  {/* End Date */}
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-slate-300">วันปิดภาคเรียน (Term End)</label>
+                    <div className="relative">
+                      <input
+                        type="date"
+                        value={termCalendarSettings.hvc.endDate}
+                        onChange={(e) => setTermCalendarSettings({
+                          ...termCalendarSettings,
+                          hvc: { ...termCalendarSettings.hvc, endDate: e.target.value }
+                        })}
+                        className="w-full text-xs font-mono font-bold p-2.5 rounded-xl glass-input text-purple-300 focus:outline-none"
+                      />
+                    </div>
+                    <p className="text-[10px] text-purple-400/80 font-medium">
+                      {formatThaiDate(termCalendarSettings.hvc.endDate, { showDayOfWeek: true })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Weeks and Exams Grid */}
+                <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-black/40 border border-white/10 text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">จำนวนสัปดาห์เรียน</span>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input
+                        type="number"
+                        min="10"
+                        max="18"
+                        value={termCalendarSettings.hvc.totalWeeks}
+                        onChange={(e) => setTermCalendarSettings({
+                          ...termCalendarSettings,
+                          hvc: { ...termCalendarSettings.hvc, totalWeeks: parseInt(e.target.value) || 15 }
+                        })}
+                        className="w-14 px-2 py-1 font-mono font-bold text-xs rounded-lg glass-input text-white text-center"
+                      />
+                      <span className="font-bold text-purple-400">สัปดาห์</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">สอบกลางภาค</span>
+                    <div className="mt-1 font-bold text-white text-xs">
+                      สัปดาห์ที่ {termCalendarSettings.hvc.midtermWeek}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      ({formatThaiDate(termCalendarSettings.hvc.midtermDate, { format: "short" })})
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">สอบปลายภาค</span>
+                    <div className="mt-1 font-bold text-white text-xs">
+                      สัปดาห์ที่ {termCalendarSettings.hvc.finalWeek}
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      ({formatThaiDate(termCalendarSettings.hvc.finalDate, { format: "short" })})
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400 font-medium">ความคืบหน้าภาคเรียน ปวส. (สัปดาห์ที่ 8 / {termCalendarSettings.hvc.totalWeeks})</span>
+                    <span className="font-bold text-purple-400">
+                      {((8 / termCalendarSettings.hvc.totalWeeks) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-black/50 overflow-hidden p-0.5 border border-white/5">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-400 transition-all duration-500"
+                      style={{ width: `${(8 / termCalendarSettings.hvc.totalWeeks) * 100}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Note */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-300 mb-1">หมายเหตุหลักสูตร ปวส.</label>
+                  <input
+                    type="text"
+                    value={termCalendarSettings.hvc.note}
+                    onChange={(e) => setTermCalendarSettings({
+                      ...termCalendarSettings,
+                      hvc: { ...termCalendarSettings.hvc, note: e.target.value }
+                    })}
+                    className="w-full text-xs p-2.5 rounded-xl glass-input text-slate-300 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Sync Information Footer Card */}
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5 text-slate-300">
+                <CalendarCheck className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+                <span>
+                  การตั้งค่านี้เชื่อมโยงกับ <strong>ระบบเช็คชื่อรายวิชา (/attendance/class)</strong> และ <strong>ระบบวิชาการ ศธ.02 (/academics)</strong> โดยตรง
+                </span>
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 font-bold transition flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                <span>บันทึกและซิงค์ข้อมูล</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Geofencing & Wi-Fi Settings */}
         {activeTab === "GEOFENCE" && (
           <div className="glass-island rounded-3xl border border-white/10 p-6 sm:p-8 shadow-2xl space-y-6">
             <div className="pb-4 border-b border-white/10 flex items-center justify-between">

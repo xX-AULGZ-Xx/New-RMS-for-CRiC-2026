@@ -48,7 +48,9 @@ const getDateForWeek = (weekNum: number): string => {
 };
 
 export default function AttendanceClassPage() {
-  const [courseCode, setCourseCode] = useState("30204-2001");
+  const [educationLevel, setEducationLevel] = useState<"VC" | "HVC">("VC");
+  const maxWeeks = educationLevel === "VC" ? 18 : 15;
+  const [courseCode, setCourseCode] = useState("20204-2001");
   const [selectedWeek, setSelectedWeek] = useState("8");
   const [date, setDate] = useState("2026-10-05");
   const [searchQuery, setSearchQuery] = useState("");
@@ -195,31 +197,75 @@ export default function AttendanceClassPage() {
                   {courseCode}
                 </span>
                 <span className="text-xs text-slate-400 font-medium">ภาคเรียนที่ 1/2569 • 3 หน่วยกิต (2-2-3)</span>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-400/25">
-                  สัปดาห์ที่ {selectedWeek} (คาบที่ {Number(selectedWeek) * 2 - 1}-{Number(selectedWeek) * 2})
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+                  educationLevel === "VC"
+                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-400/25"
+                    : "bg-purple-500/15 text-purple-300 border-purple-400/25"
+                }`}>
+                  สัปดาห์ที่ {selectedWeek} / {maxWeeks} (ระดับ {educationLevel === "VC" ? "ปวช." : "ปวส."})
                 </span>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-400/25">
                   เกณฑ์ผ่านเวลาเรียน 80%
                 </span>
               </div>
               <h3 className="font-bold text-white text-lg mt-1">
-                การพัฒนาโปรแกรมบนอุปกรณ์เคลื่อนที่ (Mobile App Dev)
+                {educationLevel === "VC" ? "การพัฒนาโปรแกรมบนอุปกรณ์เคลื่อนที่ (Mobile App Dev)" : "การพัฒนาโปรแกรมประยุกต์บนคลาวด์ (Cloud Application Dev)"}
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                กลุ่มเรียน: ปวช. 1/1 แผนกวิชา IT • ครูผู้สอน: อาจารย์สมชาย ปัญญาดี
+                กลุ่มเรียน: {educationLevel === "VC" ? "ปวช. 1/1 แผนกวิชา IT (18 สัปดาห์)" : "ปวส. 1/1 แผนกวิชา IT ทวิภาคี (15 สัปดาห์)"} • ครูผู้สอน: อาจารย์สมชาย ปัญญาดี
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {/* Level Toggle: ปวช. 18 สัปดาห์ vs ปวส. 15 สัปดาห์ */}
             <div>
-              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">สัปดาห์ที่สอน (1-18)</label>
+              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">หลักสูตร & สัปดาห์เรียน</label>
+              <div className="flex bg-black/40 border border-white/10 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEducationLevel("VC");
+                    setCourseCode("20204-2001");
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    educationLevel === "VC"
+                      ? "bg-emerald-500 text-slate-950 font-black shadow-md"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  ปวช. (18w)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEducationLevel("HVC");
+                    setCourseCode("30204-2001");
+                    if (parseInt(selectedWeek, 10) > 15) {
+                      handleWeekChange("15");
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    educationLevel === "HVC"
+                      ? "bg-purple-500 text-white font-black shadow-md"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  ปวส. (15w)
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">
+                สัปดาห์ที่สอน (1 - {maxWeeks})
+              </label>
               <select
                 value={selectedWeek}
                 onChange={(e) => handleWeekChange(e.target.value)}
                 className="text-xs font-bold px-3 py-2 rounded-xl glass-input text-white focus:outline-none cursor-pointer"
               >
-                {[...Array(18)].map((_, i) => {
+                {[...Array(maxWeeks)].map((_, i) => {
                   const weekNum = i + 1;
                   const weekDateStr = getDateForWeek(weekNum);
                   const shortDate = formatThaiDate(weekDateStr, { format: "short" });
