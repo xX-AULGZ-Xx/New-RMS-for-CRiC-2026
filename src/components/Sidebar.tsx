@@ -58,24 +58,24 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Mobile Backdrop */}
+      {/* Mobile Backdrop: z-40 */}
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs lg:hidden transition-opacity"
         />
       )}
 
-      {/* Sidebar Container (Dark Navy Slate matching CRiC RMS) */}
+      {/* Sidebar: Mobile z-50, Desktop lg:z-20 */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 bg-[#1e293b] text-slate-200 border-r border-slate-700/60 flex flex-col transition-all duration-300 ease-in-out shadow-2xl lg:static ${
+        className={`fixed top-0 bottom-0 left-0 z-50 bg-[#1e293b] text-slate-200 border-r border-slate-700/60 flex flex-col transition-all duration-300 ease-in-out shadow-2xl lg:static lg:z-20 ${
           collapsed ? "lg:w-20" : "lg:w-64"
         } ${mobileOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"}`}
       >
         {/* Top Header of Sidebar */}
-        <div className="h-16 px-4 flex items-center justify-between border-b border-slate-700/80 bg-[#0f172a]">
+        <div className="h-14 px-4 flex items-center justify-between border-b border-slate-700/80 bg-[#0f172a]">
           <Link href="/dashboard" className="flex items-center space-x-3 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-700 to-red-600 flex items-center justify-center text-white font-black shadow-md shadow-red-500/30 flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-700 to-red-600 flex items-center justify-center text-white font-black shadow-md shadow-red-500/30 flex-shrink-0">
               CR
             </div>
             {!collapsed && (

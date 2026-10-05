@@ -34,8 +34,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-prompt">
-      {/* Authentic Top Red Header (เหมือนระบบ RMS ของวิทยาลัยการอาชีพเชียงราย) */}
-      <header className="sticky top-0 z-40 h-14 bg-gradient-to-r from-[#991b1b] via-[#b91c1c] to-[#991b1b] text-white px-4 flex items-center justify-between shadow-md">
+      {/* Top Header: z-30 */}
+      <header className="sticky top-0 z-30 h-14 bg-gradient-to-r from-[#991b1b] via-[#b91c1c] to-[#991b1b] text-white px-4 flex items-center justify-between shadow-md">
         {/* Left: Hamburger menu toggle + College Name */}
         <div className="flex items-center space-x-3">
           <button
@@ -61,7 +61,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
 
-        {/* Right Action Icons (Home, Notification, Summary, User Name, QR Code) */}
+        {/* Right Action Icons */}
         <div className="flex items-center space-x-2 sm:space-x-3">
           {/* Home Icon */}
           <Link
@@ -72,7 +72,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Home className="w-4 h-4" />
           </Link>
 
-          {/* Notification with Badge */}
+          {/* Notification with Popover: z-40 */}
           <div className="relative">
             <button
               onClick={() => {
@@ -86,9 +86,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <span className="absolute top-1 right-1 w-2 h-2 bg-yellow-400 rounded-full ring-2 ring-red-800 animate-pulse"></span>
             </button>
 
-            {/* Notification Popover */}
             {notificationOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 p-4 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="absolute right-0 mt-2 w-80 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 p-4 z-40 animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <h4 className="font-bold text-xs text-slate-900">ศูนย์กลางการแจ้งเตือน (3)</h4>
                   <span className="text-[10px] text-red-600 font-bold cursor-pointer hover:underline">อ่านทั้งหมด</span>
@@ -121,7 +120,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <span>บทสรุป</span>
           </Link>
 
-          {/* User Name & Role Selector */}
+          {/* User Name & Role Selector: z-40 */}
           <div className="relative">
             <button
               onClick={() => {
@@ -136,7 +135,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </button>
 
             {roleDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 p-2 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="absolute right-0 mt-2 w-72 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-200 p-2 z-40 animate-in fade-in slide-in-from-top-2">
                 <div className="px-3 py-2 border-b border-slate-100">
                   <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     สลับบัญชีผู้ใช้งาน (Demo Switcher)
@@ -187,9 +186,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* Main Body with Sidebar + Content */}
-      <div className="flex-1 flex min-w-0 overflow-hidden">
-        {/* Sidebar Component */}
+      {/* Main Body */}
+      <div className="flex-1 flex min-w-0 overflow-hidden relative">
+        {/* Sidebar */}
         <Sidebar
           collapsed={collapsed}
           setCollapsed={setCollapsed}
