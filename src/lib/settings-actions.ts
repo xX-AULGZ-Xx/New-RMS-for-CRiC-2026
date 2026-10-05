@@ -386,3 +386,112 @@ export async function saveAllSettingsAction(payload: AllSettingsPayload) {
     };
   }
 }
+
+// 3. Get Active Academic Terms directly from MySQL
+export async function getAcademicCalendarAction() {
+  try {
+    const terms = await prisma.academicTerm.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const vcDb = terms.find((t) => t.level.includes("ปวช"));
+    const hvcDb = terms.find((t) => t.level.includes("ปวส"));
+
+    const vc = {
+      totalWeeks: vcDb?.totalWeeks || 18,
+      startDate: vcDb?.startDate ? vcDb.startDate.toISOString().split("T")[0] : "2026-08-17",
+      endDate: vcDb?.endDate ? vcDb.endDate.toISOString().split("T")[0] : "2026-12-18",
+      midtermWeek: vcDb?.midtermWeek || 9,
+      midtermDate: vcDb?.midtermDate ? vcDb.midtermDate.toISOString().split("T")[0] : "2026-10-12",
+      finalWeek: vcDb?.finalWeek || 18,
+      finalDate: vcDb?.finalDate ? vcDb.finalDate.toISOString().split("T")[0] : "2026-12-14",
+      gradeDeadline: vcDb?.gradeDeadline ? vcDb.gradeDeadline.toISOString().split("T")[0] : "2026-12-25",
+      status: (vcDb?.status as any) || "OPEN",
+      note: vcDb?.note || "จัดการเรียนการสอนในสถานศึกษาเต็มเวลา 18 สัปดาห์ ตามระเบียบ สอศ. 2569",
+    };
+
+    const hvc = {
+      totalWeeks: hvcDb?.totalWeeks || 15,
+      startDate: hvcDb?.startDate ? hvcDb.startDate.toISOString().split("T")[0] : "2026-08-17",
+      endDate: hvcDb?.endDate ? hvcDb.endDate.toISOString().split("T")[0] : "2026-11-27",
+      midtermWeek: hvcDb?.midtermWeek || 8,
+      midtermDate: hvcDb?.midtermDate ? hvcDb.midtermDate.toISOString().split("T")[0] : "2026-10-05",
+      finalWeek: hvcDb?.finalWeek || 15,
+      finalDate: hvcDb?.finalDate ? hvcDb.finalDate.toISOString().split("T")[0] : "2026-11-23",
+      gradeDeadline: hvcDb?.gradeDeadline ? hvcDb.gradeDeadline.toISOString().split("T")[0] : "2026-12-04",
+      status: (hvcDb?.status as any) || "OPEN",
+      note: hvcDb?.note || "เรียนในสถานศึกษา 15 สัปดาห์ + เตรียมฝึกงาน/ปฏิบัติงานในสถานประกอบการ 3 สัปดาห์",
+    };
+
+    return {
+      success: true,
+      academicYear: vcDb?.academicYear || "2569",
+      semester: vcDb?.term || "1",
+      vc,
+      hvc,
+    };
+  } catch (error: any) {
+    console.error("Error in getAcademicCalendarAction:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+// 4. Save Class Period Attendance batch into MySQL
+export async function saveClassPeriodAttendanceBatchAction(payload: {
+  courseCode: string;
+  courseName: string;
+  period: number;
+  weekNumber: number;
+  date: string;
+  records: Array<{
+    studentCode: string;
+    studentName: string;
+    status: "PRESENT" | "LATE" | "LEAVE" | "ABSENT";
+  }>;
+}) {
+  try {
+    const attendanceDate = new Date(payload.date + "T00:00:00.000Z");
+
+    for (const rec of payload.records) {
+      const student = await prisma.studentProfile.findFirst({
+        where: { studentCode: rec.studentCode },
+      });
+
+      if (student) {
+        await prisma.classPeriodAttendance.create({
+          data: {
+            studentId: student.id,
+            courseCode: payload.courseCode,
+            courseName: payload.courseName,
+            period: payload.period,
+            weekNumber: payload.weekNumber,
+            date: attendanceDate,
+            status: rec.status,
+            remarks: `บันทึกเช็คชื่อสัปดาห์ที่ ${payload.weekNumber}`,
+          },
+        });
+      }
+    }
+
+    revalidatePath("/attendance/class");
+    revalidatePath("/attendance");
+    revalidatePath("/attendance/reports");
+    revalidatePath("/dashboard");
+
+    return {
+      success: true,
+      count: payload.records.length,
+      message: `บันทึกเวลาเรียนรายวิชา ${payload.courseCode} สัปดาห์ที่ ${payload.weekNumber} จำนวน ${payload.records.length} คน เรียบร้อยแล้ว`,
+    };
+  } catch (error: any) {
+    console.error("Error saving class attendance:", error);
+    return {
+      success: false,
+      error: error.message || "เกิดข้อผิดพลาดในการบันทึกเวลาเรียน",
+    };
+  }
+}
