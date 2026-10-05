@@ -17,7 +17,8 @@ import {
   UserCheck,
   Check,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Settings
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -61,7 +62,8 @@ export default function Navbar() {
     { name: "สารบรรณอิเล็กทรอนิกส์", href: "/edoc", icon: FileText, badge: "3" },
     { name: "เช็คชื่อนักเรียน", href: "/attendance", icon: CalendarCheck },
     { name: "ลงเวลา & ลา", href: "/hr", icon: MapPin },
-    { name: "งานวิชาการ (ศธ.02)", href: "/academics", icon: GraduationCap },
+    { name: "งานวิชาการ", href: "/academics", icon: GraduationCap },
+    { name: "ตั้งค่าระบบ", href: "/admin", icon: Settings },
   ];
 
   return (
