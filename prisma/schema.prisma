@@ -248,16 +248,33 @@ model CourseScore {
 }
 
 model AcademicTerm {
-  id           String    @id @default(uuid())
-  level        String    // ปวช. หรือ ปวส.
-  term         String    // 1 หรือ 2
-  academicYear String    // 2569
-  totalWeeks   Int       // 18 หรือ 15
-  startDate    DateTime
-  endDate      DateTime
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id            String    @id @default(uuid())
+  level         String    // ปวช. หรือ ปวส.
+  term          String    // 1 หรือ 2
+  academicYear  String    // 2569
+  totalWeeks    Int       // 18 หรือ 15
+  startDate     DateTime
+  endDate       DateTime
+  midtermWeek   Int?      @default(9)
+  midtermDate   DateTime?
+  finalWeek     Int?      @default(18)
+  finalDate     DateTime?
+  gradeDeadline DateTime?
+  status        String    @default("OPEN") // OPEN, EXAM, CLOSED
+  note          String?   @db.Text
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([level, term, academicYear])
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  category  String   // "COLLEGE", "GEOFENCE", "INTEGRATION", "CALENDAR"
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
 }
 
 model SmartGateLog {

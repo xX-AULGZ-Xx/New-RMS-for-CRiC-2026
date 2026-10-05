@@ -45,6 +45,10 @@ import {
   reseedDatabaseAction,
   DbStatusResponse,
 } from "@/lib/db-actions";
+import {
+  getAllSettingsAction,
+  saveAllSettingsAction,
+} from "@/lib/settings-actions";
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<"COLLEGE" | "CALENDAR" | "GEOFENCE" | "INTEGRATION" | "USERS" | "SYSTEM">("COLLEGE");
@@ -348,23 +352,55 @@ export default function AdminSettingsPage() {
     legacyRmsHost: "192.168.1.200:3306 (MySQL 5.7)",
   });
 
-  // Users list state
-  const [users, setUsers] = useState([
-    { id: "1", name: "ดร.สมเกียรติ ยิ่งเจริญ", email: "director@cric.ac.th", role: "ผู้อำนวยการ (EXECUTIVE)", status: "ACTIVE" },
-    { id: "2", name: "นายวิเชียร มุ่งมั่น", email: "deputy.academic@cric.ac.th", role: "รอง ผอ.วิชาการ (EXECUTIVE)", status: "ACTIVE" },
-    { id: "3", name: "นายประสิทธิ์ นวัตกรรม", email: "head.it@cric.ac.th", role: "หัวหน้าแผนก IT (HEAD_DEPT)", status: "ACTIVE" },
-    { id: "4", name: "อาจารย์สมชาย ปัญญาดี", email: "teacher.somchai@cric.ac.th", role: "ครูผู้สอน (TEACHER)", status: "ACTIVE" },
-    { id: "5", name: "นางสาวศิริพร บุญช่วย", email: "staff.admin@cric.ac.th", role: "เจ้าหน้าที่ธุรการ (STAFF)", status: "ACTIVE" },
-  ]);
+  // Users list state (loaded from MySQL)
+  const [users, setUsers] = useState<any[]>([]);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [saveMessage, setSaveMessage] = useState("");
 
-  const handleSave = (e: React.FormEvent) => {
+  // Load all settings directly from MySQL on mount
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await getAllSettingsAction();
+        if (res.success) {
+          if (res.collegeSettings) setCollegeSettings(res.collegeSettings);
+          if (res.geofenceSettings) setGeofenceSettings(res.geofenceSettings);
+          if (res.integrations) setIntegrations(res.integrations);
+          if (res.termCalendarSettings) setTermCalendarSettings(res.termCalendarSettings);
+          if (res.users && res.users.length > 0) setUsers(res.users);
+        }
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setTimeout(() => {
+    setSaveSuccess(false);
+    try {
+      const res = await saveAllSettingsAction({
+        termCalendarSettings,
+        collegeSettings,
+        geofenceSettings,
+        integrations,
+      });
+      if (res.success) {
+        setSaveMessage(res.message || "บันทึกการตั้งค่าลงฐานข้อมูล MySQL สำเร็จแล้ว!");
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 5000);
+      } else {
+        alert("เกิดข้อผิดพลาดในการบันทึก: " + res.error);
+      }
+    } catch (err: any) {
+      alert("เกิดข้อผิดพลาด: " + err.message);
+    } finally {
       setIsSaving(false);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 4000);
-    }, 600);
+    }
   };
 
   return (
@@ -396,7 +432,7 @@ export default function AdminSettingsPage() {
             ) : (
               <Save className="w-4 h-4 text-purple-200" />
             )}
-            <span>บันทึกการตั้งค่าทั้งหมด</span>
+            <span>{isSaving ? "กำลังบันทึกลงฐานข้อมูล..." : "บันทึกการตั้งค่าทั้งหมดลง MySQL"}</span>
           </button>
         </div>
 
@@ -406,8 +442,12 @@ export default function AdminSettingsPage() {
             <div className="flex items-center space-x-3 text-xs">
               <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0" />
               <div>
-                <p className="font-bold text-sm text-emerald-300">บันทึกการตั้งค่าระบบเรียบร้อยแล้ว!</p>
-                <p className="text-slate-300 text-xs">การเปลี่ยนแปลงมีผลบังคับใช้กับบริการคลาวด์และอุปกรณ์ทั้งหมดในทันที</p>
+                <p className="font-bold text-sm text-emerald-300">
+                  {saveMessage || "บันทึกการตั้งค่าระบบลงฐานข้อมูลเรียบร้อยแล้ว!"}
+                </p>
+                <p className="text-slate-300 text-xs">
+                  บันทึกลงฐานข้อมูล MySQL (ตาราง SystemSetting และ AcademicTerm) สำเร็จ มีผลกับทั้งระบบทันที
+                </p>
               </div>
             </div>
             <button
@@ -1112,8 +1152,13 @@ export default function AdminSettingsPage() {
           <div className="glass-island rounded-3xl border border-white/10 p-6 sm:p-8 shadow-2xl space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
               <div>
-                <h2 className="font-bold text-white text-base">จัดการบัญชีผู้ใช้และกำหนดสิทธิ์ (RBAC)</h2>
-                <p className="text-xs text-slate-400 mt-0.5">ควบคุมสิทธิ์ตามโครงสร้างหน่วยงานราชการอาชีวศึกษา</p>
+                <div className="flex items-center space-x-2">
+                  <h2 className="font-bold text-white text-base">จัดการบัญชีผู้ใช้และกำหนดสิทธิ์ (RBAC)</h2>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-mono font-bold">
+                    {users.length} บัญชีในฐานข้อมูล
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">ควบคุมสิทธิ์ตามโครงสร้างหน่วยงานราชการอาชีวศึกษา ซิงก์ตรงจาก MySQL</p>
               </div>
 
               <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs flex items-center space-x-1.5 self-start sm:self-auto shadow-md">
@@ -1121,6 +1166,13 @@ export default function AdminSettingsPage() {
                 <span>เพิ่มผู้ใช้งานใหม่</span>
               </button>
             </div>
+
+            {isLoadingSettings && (
+              <div className="py-8 text-center text-xs text-slate-400">
+                <RefreshCw className="w-5 h-5 animate-spin mx-auto text-cyan-400 mb-2" />
+                กำลังโหลดข้อมูลผู้ใช้จากฐานข้อมูล MySQL...
+              </div>
+            )}
 
             <div className="divide-y divide-white/5">
               {users.map((u) => (
