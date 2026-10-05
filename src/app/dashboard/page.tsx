@@ -11,13 +11,15 @@ import {
   AlertCircle,
   Users,
   ArrowRight,
-  TrendingUp,
-  Building2,
   Sparkles,
   ChevronRight,
-  Filter,
-  BarChart3,
-  Calendar
+  TrendingUp,
+  Building2,
+  Radio,
+  Zap,
+  Activity,
+  Layers,
+  ArrowUpRight
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -39,222 +41,264 @@ export default async function DashboardPage() {
     prisma.personnelProfile.count(),
     prisma.department.count(),
     prisma.document.findMany({
-      take: 6,
+      take: 5,
       orderBy: { updatedAt: "desc" },
       include: { creator: true, routings: { include: { targetUser: true } } },
     }),
     prisma.studentAttendance.count(),
   ]);
 
-  // Attendance rate simulation (e.g. 96.4%)
-  const attendanceRate = studentCount > 0 ? ((studentCount - 1) / studentCount * 100).toFixed(1) : "96.4";
+  const attendanceRate = studentCount > 0 ? Math.round(((studentCount - 1) / studentCount) * 100) : 96;
 
   return (
     <AppShell>
-      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Executive Banner */}
-        <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
-          <div className="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="max-w-7xl mx-auto space-y-6 pb-12 pt-2">
+        {/* Welcome Panoramic Widget (Bento 12-col) */}
+        <div className="relative overflow-hidden glass-island rounded-3xl p-6 sm:p-8 border border-white/10 shadow-2xl">
+          {/* Subtle gradient highlights */}
+          <div className="absolute top-0 right-0 -mt-16 -mr-16 w-80 h-80 bg-gradient-to-br from-blue-500/20 via-indigo-500/20 to-transparent rounded-full blur-3xl pointer-events-none"></div>
 
-          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-3 py-1 text-xs font-bold bg-blue-500/30 text-blue-200 border border-blue-400/30 rounded-full backdrop-blur">
-                  ภาคเรียนที่ 1 / ปีการศึกษา 2569
-                </span>
-                <span className="px-3 py-1 text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full flex items-center">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-                  ระบบเชื่อมต่อ PostgreSQL สมบูรณ์
-                </span>
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-cyan-300 text-xs font-bold backdrop-blur">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                <span>Executive Command Center • CRiC 2569</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                ยินดีต้อนรับ ดร.สมเกียรติ ยิ่งเจริญ
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                สวัสดี ดร.สมเกียรติ ยิ่งเจริญ
               </h1>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-                ผู้อำนวยการวิทยาลัยอาชีวศึกษา CRiC • วันนี้มีหนังสือราชการรอการพิจารณาเกษียณและลงนามจำนวน{" "}
-                <span className="font-bold text-amber-300">{docsPendingCount} ฉบับ</span>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl font-normal leading-relaxed">
+                ภาพรวมสถานศึกษาแบบบูรณาการ วันนี้มีเอกสารรอพิจารณาลงนามจำนวน{" "}
+                <span className="text-amber-400 font-bold">{docsPendingCount} ฉบับ</span> และนักศึกษาเข้าแถวหน้าเสาธงคิดเป็นอัตรา{" "}
+                <span className="text-emerald-400 font-bold">{attendanceRate}%</span>
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2.5">
               <Link
                 href="/edoc"
-                className="inline-flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/25 transition-all hover:scale-105 active:scale-95"
+                className="inline-flex items-center space-x-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-bold text-xs shadow-lg shadow-blue-500/25 ring-1 ring-white/20 transition-all hover:scale-105 active:scale-95"
               >
                 <FileText className="w-4 h-4" />
-                <span>พิจารณาลงนาม ({docsPendingCount})</span>
+                <span>เกษียณหนังสือด่วน ({docsPendingCount})</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
               <Link
                 href="/attendance"
-                className="inline-flex items-center space-x-2 px-5 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold backdrop-blur border border-white/10 transition-colors"
+                className="inline-flex items-center space-x-2 px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs border border-white/10 transition-colors"
               >
-                <CalendarCheck className="w-4 h-4 text-emerald-300" />
+                <CalendarCheck className="w-4 h-4 text-emerald-400" />
                 <span>ตรวจแถวหน้าเสาธง</span>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* 4 Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Stat 1 */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-300 transition-all">
+        {/* Apple Bento Grid Widgets (12 Cols) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5">
+          {/* Bento 1: Circular Activity Ring (Attendance) - 4 cols */}
+          <div className="lg:col-span-4 glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">หนังสือรอเกษียณ</span>
-              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                <FileText className="w-5 h-5" />
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">การเข้าแถวหน้าเสาธง</span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <CalendarCheck className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline space-x-2">
-              <span className="text-3xl font-black text-slate-900">{docsPendingCount}</span>
-              <span className="text-xs text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded-full">
-                รอลงนาม
-              </span>
+
+            <div className="my-4 flex items-center justify-center space-x-6">
+              {/* Apple Activity Ring visual */}
+              <div className="relative w-28 h-28 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    className="text-white/10"
+                    strokeWidth="3.5"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                  <path
+                    className="text-emerald-500 drop-shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                    strokeDasharray={`${attendanceRate}, 100`}
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    stroke="currentColor"
+                    fill="none"
+                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="text-2xl font-black text-white">{attendanceRate}%</span>
+                  <span className="text-[10px] text-emerald-400 font-bold">มาเรียน</span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[10px]">นักเรียนทั้งหมด</span>
+                  <span className="text-white font-bold">{studentCount} คน</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px]">เช็คแล้ว</span>
+                  <span className="text-emerald-400 font-bold">{todayAttendanceCount} คน</span>
+                </div>
+              </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between text-[11px] text-slate-400">
-              <span>อนุมัติแล้ว: {docsApprovedCount} ฉบับ</span>
-              <Link href="/edoc" className="text-blue-600 font-semibold hover:underline">จัดการ →</Link>
+
+            <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+              <span className="text-slate-400 text-[11px]">อัปเดตแบบเรียลไทม์</span>
+              <Link href="/attendance" className="text-cyan-400 font-bold flex items-center hover:underline">
+                <span>เช็คชื่อ 1-Click</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
+              </Link>
             </div>
           </div>
 
-          {/* Stat 2 */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-emerald-300 transition-all">
+          {/* Bento 2: Documents Queue Widget - 4 cols */}
+          <div className="lg:col-span-4 glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">การเข้าแถววันนี้</span>
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
-                <CalendarCheck className="w-5 h-5" />
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">หนังสือสารบรรณ</span>
+              <div className="w-8 h-8 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-cyan-400">
+                <FileText className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline space-x-2">
-              <span className="text-3xl font-black text-slate-900">{attendanceRate}%</span>
-              <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-                อัตราการมาเรียน
-              </span>
+
+            <div className="my-3 space-y-2">
+              <div className="flex items-baseline space-x-2">
+                <span className="text-4xl font-black text-white">{docsPendingCount}</span>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  รอลงนามดิจิทัล
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                อนุมัติเสร็จสิ้นแล้วในระบบจำนวน {docsApprovedCount} ฉบับ
+              </p>
             </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between text-[11px] text-slate-400">
-              <span>นักเรียนทั้งหมด {studentCount} คน</span>
-              <Link href="/attendance" className="text-emerald-600 font-semibold hover:underline">เช็คชื่อ →</Link>
+
+            <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+                <span className="text-slate-200">เรื่องด่วน: โครงการ AI 2569</span>
+              </div>
+              <Link href="/edoc" className="text-cyan-400 font-bold hover:underline">
+                ลงนาม →
+              </Link>
             </div>
           </div>
 
-          {/* Stat 3 */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-amber-300 transition-all">
+          {/* Bento 3: Campus GPS Geofence Widget - 4 cols */}
+          <div className="lg:col-span-4 glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">บุคลากรลงเวลา</span>
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                <MapPin className="w-5 h-5" />
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">พิกัด GPS สถานศึกษา</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <Radio className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-3 flex items-baseline space-x-2">
-              <span className="text-3xl font-black text-slate-900">{personnelCount}</span>
-              <span className="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">
-                อยู่ในสถานศึกษา
-              </span>
-            </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between text-[11px] text-slate-400">
-              <span>รัศมี GPS &le; 200 เมตร</span>
-              <Link href="/hr" className="text-amber-600 font-semibold hover:underline">บันทึกเวลา →</Link>
-            </div>
-          </div>
 
-          {/* Stat 4 */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">แผนกวิชา / สาขา</span>
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-                <Building2 className="w-5 h-5" />
+            <div className="my-3 space-y-1.5 text-xs">
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">ศูนย์กลาง CRiC:</span>
+                <span className="font-mono text-cyan-300">19.9072 N, 99.8325 E</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-white/5">
+                <span className="text-slate-400">Wi-Fi สถานศึกษา:</span>
+                <span className="font-mono text-emerald-400">CRIC-STAFF</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-400">บุคลากรลงเวลาแล้ว:</span>
+                <span className="text-white font-bold">{personnelCount} ท่าน</span>
               </div>
             </div>
-            <div className="mt-3 flex items-baseline space-x-2">
-              <span className="text-3xl font-black text-slate-900">{departmentCount}</span>
-              <span className="text-xs text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full">
-                พร้อมส่ง ศธ.02
+
+            <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs">
+              <span className="text-emerald-400 text-[11px] flex items-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5"></span>
+                อยู่ในรัศมี 200 ม.
               </span>
-            </div>
-            <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between text-[11px] text-slate-400">
-              <span>หลักสูตร สอศ. 2569</span>
-              <Link href="/academics" className="text-indigo-600 font-semibold hover:underline">ตัดเกรด →</Link>
+              <Link href="/hr" className="text-cyan-400 font-bold flex items-center hover:underline">
+                <span>บันทึกเวลา</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-0.5" />
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* Attendance Trend Bar & Recent Documents Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Recent E-Documents (Left 8 cols) */}
-          <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        {/* Bento Row 2: Document Feeds & Action Panel (8 cols + 4 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Left: Recent E-Documents Feed (8 cols) */}
+          <div className="lg:col-span-8 glass-card rounded-3xl p-6 sm:p-7 border border-white/10 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div>
-                <h2 className="font-extrabold text-slate-900 text-lg">รายการหนังสือราชการล่าสุด (E-Documents)</h2>
-                <p className="text-xs text-slate-500 mt-0.5">แสดงลำดับขั้นและสถานะการพิจารณาเกษียณหนังสือ</p>
+                <h2 className="font-black text-white text-base">สตรีมเอกสารสารบรรณและเส้นทางเกษียณ</h2>
+                <p className="text-xs text-slate-400 mt-0.5">รายการบันทึกข้อความรอการพิจารณาและอนุมัติตามลำดับขั้น</p>
               </div>
 
               <Link
                 href="/edoc"
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 font-bold text-xs transition-colors self-start sm:self-auto"
+                className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-300 font-bold text-xs flex items-center space-x-1 transition-colors"
               >
-                <span>จัดการหนังสือทั้งหมด</span>
+                <span>ดูทั้งหมด</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-white/5">
               {recentDocs.map((doc) => {
                 const isApproved = doc.status === "APPROVED";
                 return (
-                  <div key={doc.id} className="py-4 first:pt-0 last:pb-0 space-y-2.5">
+                  <div key={doc.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                          <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-white/5 text-slate-300 border border-white/10">
                             {doc.docNumber || "รอออกเลข"}
                           </span>
                           <span
-                            className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                               isApproved
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-amber-100 text-amber-800"
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                             }`}
                           >
-                            {isApproved ? "อนุมัติเรียบร้อย" : "รอการลงนาม"}
+                            {isApproved ? "อนุมัติแล้ว" : "อยู่ระหว่างพิจารณา"}
                           </span>
                           {doc.priority === "URGENT" && (
-                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30">
                               ด่วน
                             </span>
                           )}
                         </div>
-                        <h4 className="font-bold text-slate-900 text-sm hover:text-blue-600 transition-colors">
+                        <h4 className="font-bold text-white text-sm hover:text-cyan-400 transition-colors">
                           <Link href={`/edoc?id=${doc.id}`}>{doc.title}</Link>
                         </h4>
-                        <p className="text-xs text-slate-500 line-clamp-1">
+                        <p className="text-xs text-slate-400 line-clamp-1">
                           {doc.abstractContent}
                         </p>
                       </div>
 
                       <Link
                         href={`/edoc?id=${doc.id}`}
-                        className="flex-shrink-0 px-3.5 py-1.5 text-xs font-bold rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-xs transition-colors text-center"
+                        className="flex-shrink-0 px-4 py-1.5 text-xs font-bold rounded-xl bg-blue-600/80 hover:bg-blue-600 text-white shadow-md shadow-blue-600/25 border border-white/20 transition-all text-center self-start sm:self-auto"
                       >
-                        พิจารณา
+                        เปิดเอกสาร
                       </Link>
                     </div>
 
                     {/* Routing Steps Progress */}
-                    <div className="flex items-center space-x-2 pt-1 text-xs text-slate-500 overflow-x-auto pb-1">
-                      <span className="font-bold text-slate-600 text-[11px]">สายการเสนอ:</span>
+                    <div className="flex items-center space-x-2 pt-1 text-xs text-slate-400 overflow-x-auto pb-1">
+                      <span className="font-bold text-slate-500 text-[10px]">ลำดับเสนอ:</span>
                       {doc.routings.map((r, i) => (
                         <div key={r.id} className="flex items-center space-x-1.5 flex-shrink-0">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] ${
+                            className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] ${
                               r.isCompleted
-                                ? "bg-emerald-50 text-emerald-700 font-bold border border-emerald-200"
-                                : "bg-slate-100 text-slate-600"
+                                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 font-bold"
+                                : "bg-white/5 text-slate-400"
                             }`}
                           >
-                            {r.isCompleted && <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />}
+                            {r.isCompleted && <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-400" />}
                             {r.targetUser.fullName.split(" ")[0]} {r.targetUser.fullName.split(" ")[1]}
                           </span>
-                          {i < doc.routings.length - 1 && <span className="text-slate-300">→</span>}
+                          {i < doc.routings.length - 1 && <span className="text-slate-600">→</span>}
                         </div>
                       ))}
                     </div>
@@ -264,67 +308,78 @@ export default async function DashboardPage() {
             </div>
           </div>
 
-          {/* Right Column: Weekly Attendance & Fast Actions (4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Weekly Attendance Rate Chart Bar */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-extrabold text-slate-900 text-sm">สถิติเข้าแถวสัปดาห์นี้</h3>
-                  <p className="text-[11px] text-slate-400">อัตราเฉลี่ย 95.8% (จ.-ศ.)</p>
-                </div>
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <BarChart3 className="w-4 h-4" />
-                </div>
-              </div>
+          {/* Right: Quick Action Widget & National Sync (4 cols) */}
+          <div className="lg:col-span-4 space-y-5">
+            {/* Quick Action Bento */}
+            <div className="glass-card rounded-3xl p-6 border border-white/10 space-y-4">
+              <h3 className="font-black text-white text-sm">การทำงานด่วน (Quick Actions)</h3>
 
-              {/* Day Bars */}
-              <div className="space-y-2.5 pt-2 text-xs">
-                {[
-                  { day: "จันทร์ (วันนี้)", rate: 98, color: "bg-emerald-500" },
-                  { day: "อังคาร", rate: 96, color: "bg-emerald-500" },
-                  { day: "พุธ", rate: 94, color: "bg-emerald-500" },
-                  { day: "พฤหัสบดี", rate: 95, color: "bg-emerald-500" },
-                  { day: "ศุกร์", rate: 96, color: "bg-emerald-500" },
-                ].map((d, idx) => (
-                  <div key={idx} className="space-y-1">
-                    <div className="flex justify-between font-semibold text-slate-600 text-[11px]">
-                      <span>{d.day}</span>
-                      <span className="font-mono text-slate-800">{d.rate}%</span>
+              <div className="space-y-2.5">
+                <Link
+                  href="/edoc"
+                  className="flex items-center justify-between p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-xs font-semibold group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                      <FileText className="w-4 h-4" />
                     </div>
-                    <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${d.color}`} style={{ width: `${d.rate}%` }}></div>
-                    </div>
+                    <span className="text-slate-200 group-hover:text-white">เซ็นเอกสารด้วย PIN</span>
                   </div>
-                ))}
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">
+                    {docsPendingCount}
+                  </span>
+                </Link>
+
+                <Link
+                  href="/attendance"
+                  className="flex items-center justify-between p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-xs font-semibold group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                      <CalendarCheck className="w-4 h-4" />
+                    </div>
+                    <span className="text-slate-200 group-hover:text-white">เช็คชื่อแถว 1-Click</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
+                </Link>
+
+                <Link
+                  href="/academics"
+                  className="flex items-center justify-between p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-xs font-semibold group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+                      <GraduationCap className="w-4 h-4" />
+                    </div>
+                    <span className="text-slate-200 group-hover:text-white">ส่งออกคะแนน ศธ.02</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
+                </Link>
+
+                <Link
+                  href="/admin"
+                  className="flex items-center justify-between p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-xs font-semibold group"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                      <Zap className="w-4 h-4" />
+                    </div>
+                    <span className="text-slate-200 group-hover:text-white">ตั้งค่าระบบ & Backup</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
+                </Link>
               </div>
             </div>
 
-            {/* Quick College Summary Card */}
-            <div className="bg-gradient-to-br from-slate-900 to-blue-950 rounded-3xl p-6 text-white shadow-lg space-y-4">
+            {/* National Standards Card */}
+            <div className="glass-island rounded-3xl p-5 border border-white/10 space-y-3">
               <div className="flex items-center space-x-2">
-                <Building2 className="w-5 h-5 text-cyan-400" />
-                <h4 className="font-bold text-sm">ข้อมูลสถานศึกษา (CRiC)</h4>
+                <Building2 className="w-4 h-4 text-cyan-400" />
+                <h4 className="font-bold text-white text-xs">มาตรฐาน สอศ. กระทรวงศึกษาธิการ</h4>
               </div>
-
-              <div className="space-y-2 text-xs text-slate-300">
-                <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">สังกัด:</span>
-                  <span className="font-semibold text-white">สอศ. (อาชีวศึกษา)</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">พิกัดสถานศึกษา:</span>
-                  <span className="font-mono text-cyan-300">19.9072 N, 99.8325 E</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-800">
-                  <span className="text-slate-400">Wi-Fi ออฟฟิเชียล:</span>
-                  <span className="font-mono text-emerald-400">CRIC-STAFF</span>
-                </div>
-                <div className="flex justify-between py-1">
-                  <span className="text-slate-400">มาตรฐานเกรด:</span>
-                  <span className="font-semibold text-amber-300">ศธ.02 สอศ. Compatible</span>
-                </div>
-              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed font-sarabun">
+                ระบบ New RMS CRiC 2569 ได้รับการออกแบบให้สอดคล้องกับระเบียบสารบรรณอิเล็กทรอนิกส์และเกณฑ์มาตรฐานวิชาชีพ
+              </p>
             </div>
           </div>
         </div>

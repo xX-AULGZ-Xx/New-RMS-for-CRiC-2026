@@ -3,25 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Users,
-  GraduationCap,
+  LayoutDashboard,
   FileText,
-  BarChart3,
-  Award,
-  Fingerprint,
-  Megaphone,
-  BookOpen,
-  DollarSign,
-  Package,
-  CalendarDays,
-  Car,
+  CalendarCheck,
+  MapPin,
+  GraduationCap,
   Settings,
-  LogOut,
   ChevronLeft,
   ChevronRight,
-  ShieldAlert,
+  LogOut,
+  Sparkles,
+  Award,
+  BookOpen,
   FolderGit2,
-  CalendarCheck
+  DollarSign,
+  Package,
+  Megaphone,
+  Fingerprint
 } from "lucide-react";
 
 interface SidebarProps {
@@ -39,54 +37,61 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
-  const menuItems = [
-    { name: "ระบบบุคลากร", href: "/hr", icon: Users, color: "text-amber-400" },
-    { name: "ระบบนักเรียน", href: "/attendance", icon: GraduationCap, color: "text-orange-400" },
-    { name: "ระบบสารบรรณ", href: "/edoc", icon: FileText, color: "text-blue-400", badge: "3" },
-    { name: "ระบบวัดผล และหลักสูตร", href: "/academics", icon: BarChart3, color: "text-cyan-400" },
-    { name: "ระบบประเมิน (PA)", href: "/evaluation", icon: Award, color: "text-yellow-400" },
-    { name: "ระบบสแกน & ลงเวลา", href: "/hr?tab=checkin", icon: Fingerprint, color: "text-emerald-400" },
-    { name: "ระบบประชาสัมพันธ์", href: "/pr", icon: Megaphone, color: "text-pink-400" },
-    { name: "ระบบถอดถอนรายวิชา", href: "/drop-courses", icon: BookOpen, color: "text-sky-400", badge: "7" },
-    { name: "ระบบโครงการ งานวิจัยฯ", href: "/research", icon: FolderGit2, color: "text-indigo-400" },
-    { name: "ระบบการเงินสถานศึกษา", href: "/finance", icon: DollarSign, color: "text-emerald-400" },
-    { name: "ระบบพัสดุ / ครุภัณฑ์", href: "/inventory", icon: Package, color: "text-teal-400" },
-    { name: "ระบบงานกิจกรรม", href: "/activities", icon: CalendarCheck, color: "text-amber-400" },
-    { name: "ระบบจองห้องประชุม/รถ", href: "/booking", icon: Car, color: "text-blue-400" },
-    { name: "ระบบผู้ดูแลระบบ", href: "/admin", icon: Settings, color: "text-purple-400" },
+  const menuSections = [
+    {
+      title: "Core",
+      items: [
+        { name: "แดชบอร์ด", href: "/dashboard", icon: LayoutDashboard, glow: "group-hover:text-blue-400" },
+        { name: "สารบรรณดิจิทัล", href: "/edoc", icon: FileText, badge: "3", badgeColor: "bg-rose-500", glow: "group-hover:text-rose-400" },
+      ],
+    },
+    {
+      title: "Campus & Staff",
+      items: [
+        { name: "เช็คชื่อหน้าเสาธง", href: "/attendance", icon: CalendarCheck, glow: "group-hover:text-emerald-400" },
+        { name: "ลงเวลา & ลา (GPS)", href: "/hr", icon: MapPin, glow: "group-hover:text-amber-400" },
+        { name: "วิชาการ (ศธ.02)", href: "/academics", icon: GraduationCap, glow: "group-hover:text-purple-400" },
+      ],
+    },
+    {
+      title: "System",
+      items: [
+        { name: "ตั้งค่าระบบ", href: "/admin", icon: Settings, glow: "group-hover:text-cyan-400" },
+      ],
+    },
   ];
 
   return (
     <>
-      {/* Mobile Backdrop: z-40 */}
+      {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
           onClick={() => setMobileOpen(false)}
-          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-md lg:hidden transition-opacity"
         />
       )}
 
-      {/* Sidebar: Mobile z-50, Desktop lg:z-20 */}
+      {/* Floating Island Sidebar */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 bg-[#1e293b] text-slate-200 border-r border-slate-700/60 flex flex-col transition-all duration-300 ease-in-out shadow-2xl lg:static lg:z-20 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 lg:my-3 lg:ml-3 lg:h-[calc(100vh-1.5rem)] glass-island rounded-3xl flex flex-col transition-all duration-300 ease-in-out lg:static ${
           collapsed ? "lg:w-20" : "lg:w-64"
-        } ${mobileOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"}`}
+        } ${mobileOpen ? "translate-x-0 w-64 m-2" : "-translate-x-full lg:translate-x-0"}`}
       >
-        {/* Top Header of Sidebar */}
-        <div className="h-14 px-4 flex items-center justify-between border-b border-slate-700/80 bg-[#0f172a]">
-          <Link href="/dashboard" className="flex items-center space-x-3 overflow-hidden">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-700 to-red-600 flex items-center justify-center text-white font-black shadow-md shadow-red-500/30 flex-shrink-0">
-              CR
+        {/* Brand / Logo Capsule */}
+        <div className="h-16 px-4 flex items-center justify-between border-b border-white/10">
+          <Link href="/dashboard" className="flex items-center space-x-3 overflow-hidden group">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center text-white font-black text-sm shadow-lg shadow-blue-500/30 ring-1 ring-white/20 group-hover:scale-105 transition-transform flex-shrink-0">
+              RC
             </div>
             {!collapsed && (
-              <div className="leading-tight">
+              <div className="overflow-hidden">
                 <div className="flex items-center space-x-1.5">
-                  <span className="font-extrabold text-white tracking-tight text-sm">New RMS</span>
-                  <span className="text-[9px] font-black uppercase bg-red-900/80 text-rose-300 border border-red-700/60 px-1.5 py-0.5 rounded-full">
+                  <span className="font-black text-white text-base tracking-tight">New RMS</span>
+                  <span className="text-[9px] font-black uppercase bg-blue-500/20 text-cyan-300 border border-blue-400/30 px-1.5 py-0.5 rounded-full">
                     2569
                   </span>
                 </div>
-                <p className="text-[10px] font-medium text-slate-400 truncate">วอช.เชียงราย (CRiC)</p>
+                <p className="text-[10px] font-medium text-slate-400 truncate">CRiC Apple Glass Edition</p>
               </div>
             )}
           </Link>
@@ -94,68 +99,83 @@ export default function Sidebar({
           {/* Desktop Toggle Button */}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:flex w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white items-center justify-center transition-colors"
-            title={collapsed ? "ขยายเมนู" : "ย่อเมนู"}
+            className="hidden lg:flex w-7 h-7 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white items-center justify-center border border-white/5 transition-all"
+            title={collapsed ? "ขยายแถบเมนู" : "ย่อแถบเมนู"}
           >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
           </button>
         </div>
 
         {/* Menu Navigation Items */}
-        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                title={collapsed ? item.name : undefined}
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all relative ${
-                  isActive
-                    ? "bg-red-700 text-white shadow-md shadow-red-900/50"
-                    : "text-slate-300 hover:text-white hover:bg-slate-800/80"
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-white" : item.color}`} />
-                  {!collapsed && <span className="truncate">{item.name}</span>}
-                </div>
+        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+          {menuSections.map((section, sIdx) => (
+            <div key={sIdx} className="space-y-1">
+              {!collapsed && (
+                <p className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  {section.title}
+                </p>
+              )}
+              <div className="space-y-1">
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      title={collapsed ? item.name : undefined}
+                      className={`group flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all relative ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-600/90 to-indigo-600/90 text-white shadow-lg shadow-blue-600/30 ring-1 ring-white/20"
+                          : "text-slate-300 hover:text-white hover:bg-white/8"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive ? "text-white" : "text-slate-400 " + item.glow}`} />
+                        {!collapsed && <span className="truncate">{item.name}</span>}
+                      </div>
 
-                {!collapsed && item.badge && (
-                  <span className="px-2 py-0.2 text-[10px] font-black bg-rose-600 text-white rounded-full shadow-xs">
-                    {item.badge}
-                  </span>
-                )}
+                      {!collapsed && item.badge && (
+                        <span className={`px-2 py-0.5 text-[10px] font-black text-white rounded-full shadow-sm ${item.badgeColor}`}>
+                          {item.badge}
+                        </span>
+                      )}
 
-                {/* Dot badge on collapsed */}
-                {collapsed && item.badge && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[#1e293b]"></span>
-                )}
-              </Link>
-            );
-          })}
+                      {/* Collapsed dot badge */}
+                      {collapsed && item.badge && (
+                        <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-slate-900"></span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Footer Log Out */}
-        <div className="p-3 border-t border-slate-700/80 bg-[#0f172a]">
+        {/* User Capsule Footer */}
+        <div className="p-3 border-t border-white/10">
           {!collapsed ? (
-            <Link
-              href="/"
-              className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-800/60 hover:bg-rose-950/50 hover:text-rose-400 text-slate-400 text-xs font-bold transition-all border border-slate-700/40"
-            >
-              <div className="flex items-center space-x-2">
-                <LogOut className="w-4 h-4 text-rose-500" />
-                <span>ออกจากระบบ</span>
+            <div className="flex items-center justify-between p-2 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center space-x-2.5 overflow-hidden">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-1 ring-white/20 flex-shrink-0">
+                  ผอ
+                </div>
+                <div className="overflow-hidden">
+                  <p className="text-xs font-bold text-white truncate">ดร.สมเกียรติ ยิ่งเจริญ</p>
+                  <p className="text-[10px] text-slate-400 truncate">ผู้อำนวยการวิทยาลัย</p>
+                </div>
               </div>
-              <span className="text-[10px] text-slate-500">CRiC RMS</span>
-            </Link>
+              <Link href="/" title="ออกจากระบบ" className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors">
+                <LogOut className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           ) : (
             <div className="flex justify-center">
-              <Link href="/" title="ออกจากระบบ" className="p-2 text-rose-400 hover:text-rose-300">
-                <LogOut className="w-4 h-4" />
-              </Link>
+              <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-1 ring-white/20 shadow-md">
+                ผอ
+              </div>
             </div>
           )}
         </div>

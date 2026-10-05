@@ -179,45 +179,45 @@ export default function EdocPage() {
 
   return (
     <AppShell>
-      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6 pb-12 pt-2">
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <span>งานสารบรรณอิเล็กทรอนิกส์</span>
+            <div className="flex items-center space-x-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <span>งานสารบรรณ</span>
               <span>•</span>
-              <span className="text-blue-600">E-Document & Signature System</span>
+              <span className="text-cyan-400">E-Document Reader</span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 mt-1">
+            <h1 className="text-2xl font-black text-white mt-1">
               เกษียณหนังสือและลงนามดิจิทัล
             </h1>
           </div>
 
           {/* View Mode Toggle */}
           <div className="flex items-center space-x-2">
-            <div className="flex bg-slate-200/80 p-1 rounded-xl text-xs font-bold">
+            <div className="flex bg-white/5 border border-white/10 p-1 rounded-2xl text-xs font-bold">
               <button
                 onClick={() => setViewMode("PAPER")}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-colors ${
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl transition-all ${
                   viewMode === "PAPER"
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
-                <FileText className="w-3.5 h-3.5 text-blue-600" />
-                <span>มุมมองบันทึกข้อความราชการ</span>
+                <FileText className="w-3.5 h-3.5" />
+                <span>มุมมองบันทึกข้อความ</span>
               </button>
 
               <button
                 onClick={() => setViewMode("TIMELINE")}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-colors ${
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl transition-all ${
                   viewMode === "TIMELINE"
-                    ? "bg-white text-slate-900 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                    : "text-slate-400 hover:text-white"
                 }`}
               >
-                <Clock className="w-3.5 h-3.5 text-indigo-600" />
-                <span>เส้นทางการเสนอ (Workflow)</span>
+                <Clock className="w-3.5 h-3.5" />
+                <span>เส้นทางการเสนอ</span>
               </button>
             </div>
           </div>
@@ -225,36 +225,36 @@ export default function EdocPage() {
 
         {/* Success Banner */}
         {signSuccess && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between text-emerald-800 shadow-sm animate-fade-in">
+          <div className="glass-island border border-emerald-500/40 rounded-3xl p-5 flex items-center justify-between text-emerald-300 shadow-xl animate-fade-in">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-bold text-sm">เกษียณสั่งการและลงนามเรียบร้อยแล้ว!</p>
-                <p className="text-xs text-emerald-700">
+                <p className="font-bold text-sm text-white">เกษียณสั่งการและลงนามดิจิทัลเรียบร้อยแล้ว!</p>
+                <p className="text-xs text-emerald-400">
                   ระบบได้ประทับตราเวลาดิจิทัล (SHA-256) และสร้าง QR Code ตรวจสอบความถูกต้องให้เอกสารเรียบร้อย
                 </p>
               </div>
             </div>
             <button
               onClick={() => setSignSuccess(false)}
-              className="text-xs font-bold px-3 py-1.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+              className="text-xs font-bold px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl transition-colors"
             >
               รับทราบ
             </button>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Main Document View (Left 7 cols) */}
           <div className="lg:col-span-7 space-y-4">
             {viewMode === "PAPER" ? (
-              /* Realistic Thai Government Memorandum Format */
-              <div className="paper-sheet rounded-2xl p-8 sm:p-10 border border-slate-200 text-slate-900 relative">
+              /* Floating Paper Document (Crisp white sheet floating inside dark mode) */
+              <div className="floating-paper p-8 sm:p-10 relative">
                 {/* Stamp Seal if Approved */}
                 {selectedDoc.status === "APPROVED" && (
-                  <div className="absolute top-8 right-8 border-4 border-rose-600 text-rose-600 rounded-2xl px-5 py-2.5 font-black text-center transform rotate-6 opacity-90 shadow-md pointer-events-none">
+                  <div className="absolute top-8 right-8 border-4 border-rose-600 text-rose-600 rounded-2xl px-5 py-2.5 font-black text-center transform rotate-6 opacity-90 shadow-lg pointer-events-none">
                     <p className="text-xl tracking-wider">อนุมัติแล้ว</p>
                     <p className="text-[10px] font-sans font-bold">วอช. เชียงราย (CRiC)</p>
                     <p className="text-[9px] font-mono">5 ต.ค. 2569 • E-Signed</p>
@@ -263,7 +263,7 @@ export default function EdocPage() {
 
                 {/* Header */}
                 <div className="text-center pb-6 border-b border-slate-200">
-                  <div className="w-14 h-14 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-serif font-black text-xl mb-2">
+                  <div className="w-14 h-14 mx-auto rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-serif font-black text-xl mb-2">
                     ครุฑ
                   </div>
                   <h2 className="text-2xl font-black font-sarabun tracking-wide text-slate-900">
@@ -275,29 +275,29 @@ export default function EdocPage() {
                 <div className="mt-5 space-y-3 font-sarabun text-sm">
                   <div className="flex flex-col sm:flex-row justify-between gap-2">
                     <div className="flex items-baseline space-x-2">
-                      <strong className="text-slate-800">ส่วนราชการ:</strong>
+                      <strong className="text-slate-900">ส่วนราชการ:</strong>
                       <span className="text-slate-700">{selectedDoc.dept} {selectedDoc.phone}</span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="flex items-baseline space-x-2">
-                      <strong className="text-slate-800">ที่:</strong>
+                      <strong className="text-slate-900">ที่:</strong>
                       <span className="font-mono text-slate-700">{selectedDoc.docNumber}</span>
                     </div>
                     <div className="flex items-baseline space-x-2">
-                      <strong className="text-slate-800">วันที่:</strong>
+                      <strong className="text-slate-900">วันที่:</strong>
                       <span className="text-slate-700">{selectedDoc.createdAt}</span>
                     </div>
                   </div>
 
                   <div className="flex items-baseline space-x-2 pt-1 border-t border-slate-100">
-                    <strong className="text-slate-800 flex-shrink-0">เรื่อง:</strong>
+                    <strong className="text-slate-900 flex-shrink-0">เรื่อง:</strong>
                     <span className="font-bold text-slate-900">{selectedDoc.title}</span>
                   </div>
 
                   <div className="flex items-baseline space-x-2">
-                    <strong className="text-slate-800 flex-shrink-0">เรียน:</strong>
+                    <strong className="text-slate-900 flex-shrink-0">เรียน:</strong>
                     <span className="text-slate-700">ผู้อำนวยการวิทยาลัยอาชีวศึกษา</span>
                   </div>
                 </div>
@@ -316,7 +316,7 @@ export default function EdocPage() {
                 <div className="mt-8 text-right font-sarabun text-sm">
                   <div className="inline-block text-center space-y-1">
                     <p className="italic text-slate-500 font-serif">(ลงชื่อ) สมชาย ปัญญาดี</p>
-                    <p className="font-semibold text-slate-800">(อาจารย์สมชาย ปัญญาดี)</p>
+                    <p className="font-semibold text-slate-900">(อาจารย์สมชาย ปัญญาดี)</p>
                     <p className="text-xs text-slate-500">ครูแผนกวิชาเทคโนโลยีสารสนเทศ</p>
                   </div>
                 </div>
@@ -331,9 +331,9 @@ export default function EdocPage() {
                     {selectedDoc.routings.map((r: any, idx: number) => (
                       <div
                         key={idx}
-                        className={`p-3.5 rounded-xl border text-xs ${
+                        className={`p-3.5 rounded-2xl border text-xs ${
                           r.status === "APPROVED"
-                            ? "bg-blue-50/50 border-blue-200 text-blue-950"
+                            ? "bg-blue-50/70 border-blue-200 text-blue-950"
                             : "bg-slate-50 border-slate-200 text-slate-500"
                         }`}
                       >
@@ -358,35 +358,35 @@ export default function EdocPage() {
                 <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
                   <div className="flex items-center space-x-2">
                     <QrCode className="w-5 h-5 text-blue-600" />
-                    <span>ตรวจสอบเอกสารจริง: <strong className="font-mono text-slate-600">cric-doc-2569-demo-001</strong></span>
+                    <span>ตรวจสอบเอกสารจริง: <strong className="font-mono text-slate-700">cric-doc-2569-demo-001</strong></span>
                   </div>
                   <span className="font-mono text-[10px]">RMS E-DOC 2026</span>
                 </div>
               </div>
             ) : (
               /* Timeline View */
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-                <h3 className="font-bold text-slate-900 text-sm">บันทึกขั้นตอนการพิจารณาตามลำดับขั้น</h3>
-                <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+              <div className="glass-card rounded-3xl p-6 border border-white/10 space-y-4">
+                <h3 className="font-bold text-white text-sm">ขั้นตอนการพิจารณาตามลำดับขั้น</h3>
+                <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/10">
                   {selectedDoc.routings.map((r: any, idx: number) => {
                     const isDone = r.status === "APPROVED";
                     return (
                       <div key={idx} className="relative space-y-1 text-xs">
                         <span
                           className={`absolute -left-6 top-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                            isDone ? "bg-emerald-600 text-white" : "bg-slate-300 text-slate-700"
+                            isDone ? "bg-emerald-500 text-white" : "bg-white/20 text-slate-300"
                           }`}
                         >
                           {r.order}
                         </span>
                         <div className="flex items-center justify-between">
-                          <p className="font-bold text-slate-900">{r.title} ({r.name})</p>
-                          <span className={`text-[10px] font-bold ${isDone ? "text-emerald-600" : "text-amber-600"}`}>
+                          <p className="font-bold text-white">{r.title} ({r.name})</p>
+                          <span className={`text-[10px] font-bold ${isDone ? "text-emerald-400" : "text-amber-400"}`}>
                             {isDone ? "ลงนามเรียบร้อย" : "รอการลงนาม"}
                           </span>
                         </div>
                         {r.note && (
-                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-700 font-sarabun mt-1">
+                          <div className="glass-card p-3 rounded-2xl border border-white/10 text-slate-200 font-sarabun mt-1">
                             {r.note}
                           </div>
                         )}
@@ -399,26 +399,26 @@ export default function EdocPage() {
             )}
           </div>
 
-          {/* Digital Signature & PIN Pad (Right 5 cols) */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-md p-6 sm:p-7 space-y-5">
-              <div className="flex items-center space-x-2.5 pb-3 border-b border-slate-100">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          {/* Endorsement & Signature Pad (Right 5 cols) */}
+          <div className="lg:col-span-5 space-y-5">
+            <div className="glass-island rounded-3xl border border-white/10 p-6 sm:p-7 space-y-5 shadow-2xl">
+              <div className="flex items-center space-x-3 pb-3 border-b border-white/10">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-cyan-400 flex items-center justify-center">
                   <PenTool className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">เกษียณสั่งการ & ลงลายมือชื่อ</h3>
+                  <h3 className="font-black text-white text-sm">เกษียณสั่งการ & ลงนาม</h3>
                   <p className="text-[11px] text-slate-400">สำหรับ ดร.สมเกียรติ ยิ่งเจริญ (ผอ.)</p>
                 </div>
               </div>
 
               {selectedDoc.status === "APPROVED" ? (
                 <div className="text-center py-8 space-y-3">
-                  <div className="w-14 h-14 mx-auto rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-xs">
+                  <div className="w-14 h-14 mx-auto rounded-3xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
                     <FileCheck className="w-8 h-8" />
                   </div>
-                  <h4 className="font-bold text-slate-900">เอกสารนี้ได้รับการอนุมัติสมบูรณ์แล้ว</h4>
-                  <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                  <h4 className="font-black text-white text-base">เอกสารนี้ได้รับการอนุมัติสมบูรณ์แล้ว</h4>
+                  <p className="text-xs text-slate-400 max-w-xs mx-auto">
                     ท่านผู้อำนวยการได้ลงลายมือชื่อดิจิทัลและประทับตรายางอิเล็กทรอนิกส์เรียบร้อย
                   </p>
                   <button
@@ -435,17 +435,17 @@ export default function EdocPage() {
                       setSignSuccess(false);
                       setPin("");
                     }}
-                    className="inline-flex items-center space-x-1.5 text-xs font-bold text-blue-600 hover:underline pt-3"
+                    className="inline-flex items-center space-x-1.5 text-xs font-bold text-cyan-400 hover:underline pt-3"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>รีเซ็ตสถานะเพื่อทดสอบลงนามใหม่</span>
+                    <span>รีเซ็ตเพื่อทดสอบลงนามใหม่</span>
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSign} className="space-y-4">
                   {/* Preset Quick Notes */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">
                       ข้อคิดเห็น / คำสั่งการเกษียณหนังสือ
                     </label>
                     <div className="flex flex-wrap gap-1.5 mb-2">
@@ -459,7 +459,7 @@ export default function EdocPage() {
                           key={preset}
                           type="button"
                           onClick={() => setActionNote(preset)}
-                          className="px-2.5 py-1 text-[11px] rounded-lg bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-600 transition-colors font-medium"
+                          className="px-2.5 py-1 text-[11px] rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5 transition-colors font-medium"
                         >
                           {preset}
                         </button>
@@ -469,7 +469,7 @@ export default function EdocPage() {
                       rows={3}
                       value={actionNote}
                       onChange={(e) => setActionNote(e.target.value)}
-                      className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-sarabun"
+                      className="w-full text-xs p-3 rounded-2xl glass-input font-sarabun"
                       placeholder="พิมพ์ข้อคิดเห็นหรือคำสั่งการ..."
                     />
                   </div>
@@ -478,20 +478,20 @@ export default function EdocPage() {
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
                       <div className="flex items-center space-x-2">
-                        <label className="text-xs font-bold text-slate-700">
+                        <label className="text-xs font-bold text-slate-300">
                           วาดลายมือชื่อสด
                         </label>
                         <div className="flex items-center space-x-1">
                           <button
                             type="button"
                             onClick={() => setInkColor("#1e40af")}
-                            className={`w-3.5 h-3.5 rounded-full bg-blue-700 ring-1 ring-offset-1 ${inkColor === "#1e40af" ? "ring-blue-700" : "ring-transparent"}`}
+                            className={`w-3.5 h-3.5 rounded-full bg-blue-600 ring-1 ring-offset-1 ring-offset-slate-900 ${inkColor === "#1e40af" ? "ring-blue-400" : "ring-transparent"}`}
                             title="หมึกน้ำเงินราชการ"
                           />
                           <button
                             type="button"
-                            onClick={() => setInkColor("#0f172a")}
-                            className={`w-3.5 h-3.5 rounded-full bg-slate-900 ring-1 ring-offset-1 ${inkColor === "#0f172a" ? "ring-slate-900" : "ring-transparent"}`}
+                            onClick={() => setInkColor("#000000")}
+                            className={`w-3.5 h-3.5 rounded-full bg-black ring-1 ring-offset-1 ring-offset-slate-900 ${inkColor === "#000000" ? "ring-white" : "ring-transparent"}`}
                             title="หมึกดำ"
                           />
                         </div>
@@ -499,14 +499,14 @@ export default function EdocPage() {
                       <button
                         type="button"
                         onClick={clearCanvas}
-                        className="text-[11px] text-rose-500 hover:underline flex items-center space-x-1 font-semibold"
+                        className="text-[11px] text-rose-400 hover:underline flex items-center space-x-1 font-semibold"
                       >
                         <RotateCcw className="w-3 h-3" />
                         <span>ล้าง</span>
                       </button>
                     </div>
 
-                    <div className="border-2 border-dashed border-slate-300 rounded-2xl bg-white overflow-hidden relative shadow-inner">
+                    <div className="border border-white/20 rounded-2xl bg-white overflow-hidden relative shadow-inner">
                       <canvas
                         ref={canvasRef}
                         width={400}
@@ -518,11 +518,11 @@ export default function EdocPage() {
                         onTouchStart={startDrawing}
                         onTouchMove={draw}
                         onTouchEnd={stopDrawing}
-                        className="w-full h-28 touch-none cursor-crosshair bg-slate-50/30"
+                        className="w-full h-28 touch-none cursor-crosshair bg-slate-50"
                       />
                       {!hasDrawn && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-xs text-slate-400 font-medium">
-                          ✍️ ลากเส้นวาดลายเซ็นบนพื้นที่นี้
+                          ✍️ วาดลายมือชื่อด้วย Apple Pencil / เมาส์ / นิ้วมือ
                         </div>
                       )}
                     </div>
@@ -530,7 +530,7 @@ export default function EdocPage() {
 
                   {/* 6-Digit PIN Verification */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
                       ยืนยันรหัส PIN 6 หลัก
                     </label>
                     <div className="relative">
@@ -541,17 +541,17 @@ export default function EdocPage() {
                         value={pin}
                         onChange={(e) => setPin(e.target.value)}
                         placeholder="กรอก 123456"
-                        className="w-full pl-9 pr-3 py-2 text-sm font-mono tracking-widest rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full pl-9 pr-3 py-2.5 text-sm font-mono tracking-widest rounded-2xl glass-input"
                       />
                     </div>
                     <p className="text-[10px] text-slate-400 mt-1">
-                      💡 รหัส PIN ทดสอบ: <strong className="font-mono text-slate-700">123456</strong>
+                      💡 PIN ทดสอบ: <strong className="font-mono text-cyan-300">123456</strong>
                     </p>
                   </div>
 
                   {/* Error Notification */}
                   {errorMsg && (
-                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center space-x-2">
+                    <div className="p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300 flex items-center space-x-2">
                       <AlertCircle className="w-4 h-4 flex-shrink-0" />
                       <span>{errorMsg}</span>
                     </div>
@@ -561,7 +561,7 @@ export default function EdocPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white rounded-xl font-bold text-xs shadow-lg shadow-blue-500/25 flex items-center justify-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                    className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-2xl font-bold text-xs shadow-lg shadow-blue-500/30 border border-white/20 flex items-center justify-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <span>กำลังประทับตราดิจิทัล...</span>
