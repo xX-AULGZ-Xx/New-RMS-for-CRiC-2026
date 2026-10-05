@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/AppShell";
 import { signDocumentAction } from "@/lib/actions";
 import {
   FileText,
@@ -68,7 +68,7 @@ export default function EdocPage() {
   // Signature state
   const [pin, setPin] = useState("");
   const [actionNote, setActionNote] = useState("อนุมัติ ดำเนินการตามระเบียบ");
-  const [inkColor, setInkColor] = useState("#1e40af"); // blue or black
+  const [inkColor, setInkColor] = useState("#1e40af");
   const [signerEmail, setSignerEmail] = useState("director@cric.ac.th");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signSuccess, setSignSuccess] = useState(false);
@@ -178,10 +178,8 @@ export default function EdocPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/70 flex flex-col font-prompt">
-      <Navbar />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <AppShell>
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -252,7 +250,7 @@ export default function EdocPage() {
           {/* Main Document View (Left 7 cols) */}
           <div className="lg:col-span-7 space-y-4">
             {viewMode === "PAPER" ? (
-              /* Realistic Thai Government Memorandum Format (Sarabun style) */
+              /* Realistic Thai Government Memorandum Format */
               <div className="paper-sheet rounded-2xl p-8 sm:p-10 border border-slate-200 text-slate-900 relative">
                 {/* Stamp Seal if Approved */}
                 {selectedDoc.status === "APPROVED" && (
@@ -579,7 +577,7 @@ export default function EdocPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

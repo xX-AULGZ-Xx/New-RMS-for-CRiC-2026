@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/AppShell";
 import Link from "next/link";
 import {
   FileText,
@@ -50,10 +50,8 @@ export default async function DashboardPage() {
   const attendanceRate = studentCount > 0 ? ((studentCount - 1) / studentCount * 100).toFixed(1) : "96.4";
 
   return (
-    <div className="min-h-screen bg-slate-50/70 flex flex-col">
-      <Navbar />
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <AppShell>
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Executive Banner */}
         <div className="relative overflow-hidden bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
           <div className="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -97,7 +95,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* 4 Stat Cards with progress */}
+        {/* 4 Stat Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Stat 1 */}
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-300 transition-all">
@@ -330,7 +328,7 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }
