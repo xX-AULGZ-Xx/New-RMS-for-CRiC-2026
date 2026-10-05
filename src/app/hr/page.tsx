@@ -13,19 +13,22 @@ import {
   Send,
   Building,
   ShieldCheck,
-  FileCheck
+  FileCheck,
+  Compass,
+  Radio,
+  History
 } from "lucide-react";
 
 export default function HrPage() {
   const [activeTab, setActiveTab] = useState<"CHECKIN" | "LEAVE">("CHECKIN");
 
-  // Geofencing state (mocked or browser navigator.geolocation)
+  // Geofencing state (CRiC College: 19.9072 N, 99.8325 E)
   const [currentCoords, setCurrentCoords] = useState({ lat: 19.9073, lng: 99.8326 });
   const [wifiSsid, setWifiSsid] = useState("CRIC-STAFF");
   const [checkInStatus, setCheckInStatus] = useState<string | null>(null);
   const [timeLogs, setTimeLogs] = useState([
-    { id: 1, type: "เข้าปฏิบัติราชการ", time: "07:48 น.", date: "5 ต.ค. 2569", status: "VERIFIED", loc: "รัศมี 25 เมตร (CRIC-STAFF)" },
-    { id: 2, type: "ออกปฏิบัติราชการ", time: "16:32 น.", date: "4 ต.ค. 2569", status: "VERIFIED", loc: "รัศมี 30 เมตร (CRIC-STAFF)" },
+    { id: 1, type: "เข้าปฏิบัติราชการ", time: "07:48 น.", date: "5 ต.ค. 2569", status: "VERIFIED", loc: "รัศมี 22 เมตร (CRIC-STAFF)" },
+    { id: 2, type: "ออกปฏิบัติราชการ", time: "16:32 น.", date: "4 ต.ค. 2569", status: "VERIFIED", loc: "รัศมี 28 เมตร (CRIC-STAFF)" },
   ]);
 
   // Leave form state
@@ -45,7 +48,7 @@ export default function HrPage() {
     });
 
     if (res.success) {
-      setCheckInStatus(type === "CHECK_IN" ? "บันทึกเวลาเข้าปฏิบัติราชการสำเร็จ!" : "บันทึกเวลาออกปฏิบัติราชการสำเร็จ!");
+      setCheckInStatus(type === "CHECK_IN" ? "บันทึกเวลาเข้าปฏิบัติราชการเรียบร้อย!" : "บันทึกเวลาออกปฏิบัติราชการเรียบร้อย!");
       setTimeLogs((prev) => [
         {
           id: Date.now(),
@@ -53,7 +56,7 @@ export default function HrPage() {
           time: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }) + " น.",
           date: "5 ต.ค. 2569",
           status: "VERIFIED",
-          loc: `รัศมี ${res.distanceMeters || 15} เมตร (${wifiSsid})`,
+          loc: `รัศมี ${res.distanceMeters || 18} เมตร (${wifiSsid})`,
         },
         ...prev,
       ]);
@@ -78,19 +81,19 @@ export default function HrPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-slate-50/70 flex flex-col font-prompt">
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs font-semibold text-slate-500 uppercase">
+            <div className="flex items-center space-x-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
               <span>กลุ่มงานบริหารงานบุคคล</span>
               <span>•</span>
-              <span className="text-amber-600">Smart HR & Geofencing</span>
+              <span className="text-amber-600">Smart HR & Geofencing 2569</span>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 mt-1">
+            <h1 className="text-2xl font-black text-slate-900 mt-1">
               ระบบลงเวลาปฏิบัติราชการ & บริหารวันลาออนไลน์
             </h1>
           </div>
@@ -101,11 +104,11 @@ export default function HrPage() {
               onClick={() => setActiveTab("CHECKIN")}
               className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition-colors ${
                 activeTab === "CHECKIN"
-                  ? "bg-white text-slate-900 shadow-sm"
+                  ? "bg-white text-slate-900 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              <MapPin className="w-3.5 h-3.5 text-amber-600" />
+              <Compass className="w-3.5 h-3.5 text-amber-600" />
               <span>ลงเวลา GPS Geofencing</span>
             </button>
 
@@ -113,7 +116,7 @@ export default function HrPage() {
               onClick={() => setActiveTab("LEAVE")}
               className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg transition-colors ${
                 activeTab === "LEAVE"
-                  ? "bg-white text-slate-900 shadow-sm"
+                  ? "bg-white text-slate-900 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
@@ -125,44 +128,68 @@ export default function HrPage() {
 
         {activeTab === "CHECKIN" ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Check-In Action Card (Left 6 cols) */}
-            <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+            {/* Interactive Radar & GPS Verification Card (Left 6 cols) */}
+            <div className="lg:col-span-6 bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-7 space-y-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
-                    GPS
+                  <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+                    <Radio className="w-5 h-5 text-amber-600 animate-pulse" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 text-sm">การตรวจสอบสถานที่และเครือข่าย</h3>
-                    <p className="text-xs text-slate-500">วิทยาลัยอาชีวศึกษา CRiC</p>
+                    <h3 className="font-bold text-slate-900 text-sm">การตรวจสอบสถานที่สถานศึกษา</h3>
+                    <p className="text-xs text-slate-400">วิทยาลัยอาชีวศึกษา CRiC</p>
                   </div>
                 </div>
 
-                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700 flex items-center">
+                <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center border border-emerald-200">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-ping"></span>
-                  อยู่ในรัศมีวิทยาลัย
+                  พิกัดตรงตามเกณฑ์
                 </span>
               </div>
 
+              {/* Simulated Visual Radar Screen */}
+              <div className="relative h-44 rounded-2xl bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 flex items-center justify-center overflow-hidden border border-slate-800">
+                {/* Radar Grid Circles */}
+                <div className="absolute w-64 h-64 border border-blue-500/20 rounded-full animate-radar-ring"></div>
+                <div className="absolute w-44 h-44 border border-blue-500/30 rounded-full"></div>
+                <div className="absolute w-24 h-24 border border-blue-500/40 rounded-full"></div>
+
+                {/* College Center Point */}
+                <div className="absolute flex flex-col items-center">
+                  <div className="w-4 h-4 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50 flex items-center justify-center ring-4 ring-blue-500/30">
+                    <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                  </div>
+                  <span className="text-[10px] text-cyan-300 font-bold mt-1 bg-slate-900/80 px-2 py-0.5 rounded-full border border-cyan-500/30">
+                    CRiC Campus Center
+                  </span>
+                </div>
+
+                {/* Staff User Beacon */}
+                <div className="absolute top-12 right-24 flex items-center space-x-1.5 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/40 text-[10px] text-emerald-300">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>คุณอยู่ที่นี่ (~22ม.)</span>
+                </div>
+              </div>
+
               {/* Status parameters */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2.5 text-xs">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500 flex items-center space-x-1.5">
-                    <MapPin className="w-4 h-4 text-blue-600" />
-                    <span>พิกัด GPS ปัจจุบัน:</span>
+                    <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                    <span>พิกัด GPS อุปกรณ์:</span>
                   </span>
-                  <span className="font-mono font-bold text-slate-700">19.9073 N, 99.8326 E</span>
+                  <span className="font-mono font-bold text-slate-800">19.9073 N, 99.8326 E</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500 flex items-center space-x-1.5">
-                    <Wifi className="w-4 h-4 text-emerald-600" />
+                    <Wifi className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Wi-Fi สถานศึกษา:</span>
                   </span>
-                  <span className="font-mono font-bold text-slate-700">{wifiSsid} (เชื่อมต่อแล้ว)</span>
+                  <span className="font-mono font-bold text-slate-800">{wifiSsid} (ยืนยันแล้ว)</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-500 flex items-center space-x-1.5">
-                    <Building className="w-4 h-4 text-purple-600" />
+                    <Building className="w-3.5 h-3.5 text-purple-600" />
                     <span>ระยะห่างจากศูนย์กลาง:</span>
                   </span>
                   <span className="font-mono font-bold text-emerald-600">~22 เมตร (อนุญาต &le; 200 ม.)</span>
@@ -170,50 +197,56 @@ export default function HrPage() {
               </div>
 
               {checkInStatus && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center space-x-2">
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center space-x-2 animate-fade-in">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                  <span className="font-semibold">{checkInStatus}</span>
+                  <span className="font-bold">{checkInStatus}</span>
                 </div>
               )}
 
-              {/* 2 Big Buttons */}
+              {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={() => handleCheckIn("CHECK_IN")}
-                  className="py-4 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md shadow-emerald-600/20 flex flex-col items-center justify-center space-y-1 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="py-4 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-emerald-500/20 flex flex-col items-center justify-center space-y-1 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Clock className="w-5 h-5 mb-1" />
-                  <span>ลงเวลาเข้าปฏิบัติงาน</span>
-                  <span className="text-[10px] text-emerald-200 font-normal">เช็คอินเช้า</span>
+                  <span>ลงเวลาเข้าปฏิบัติราชการ</span>
+                  <span className="text-[10px] text-emerald-200 font-normal">เช็คอินช่วงเช้า</span>
                 </button>
 
                 <button
                   onClick={() => handleCheckIn("CHECK_OUT")}
-                  className="py-4 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-md shadow-blue-600/20 flex flex-col items-center justify-center space-y-1 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="py-4 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-blue-500/20 flex flex-col items-center justify-center space-y-1 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <Clock className="w-5 h-5 mb-1" />
-                  <span>ลงเวลาออกปฏิบัติงาน</span>
-                  <span className="text-[10px] text-blue-200 font-normal">เช็คเอาท์เย็น</span>
+                  <span>ลงเวลาออกปฏิบัติราชการ</span>
+                  <span className="text-[10px] text-blue-200 font-normal">เช็คเอาท์ช่วงเย็น</span>
                 </button>
               </div>
             </div>
 
             {/* Attendance History (Right 6 cols) */}
-            <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-              <h3 className="font-bold text-slate-900 text-sm">ประวัติการลงเวลาล่าสุด</h3>
+            <div className="lg:col-span-6 bg-white rounded-3xl border border-slate-200 shadow-xs p-6 sm:p-7 space-y-5">
+              <div className="flex items-center space-x-2 pb-3 border-b border-slate-100">
+                <History className="w-5 h-5 text-slate-500" />
+                <h3 className="font-bold text-slate-900 text-sm">ประวัติการลงเวลาของฉัน</h3>
+              </div>
+
               <div className="divide-y divide-slate-100">
                 {timeLogs.map((log) => (
-                  <div key={log.id} className="py-3 flex items-center justify-between">
+                  <div key={log.id} className="py-3.5 flex items-center justify-between">
                     <div>
                       <div className="flex items-center space-x-2">
                         <span className="font-bold text-slate-800 text-sm">{log.type}</span>
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">
-                          ถูกต้อง
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                          ✓ ยืนยันพิกัด
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">{log.date} • {log.loc}</p>
+                      <p className="text-[11px] text-slate-400 mt-1 font-sarabun">{log.date} • {log.loc}</p>
                     </div>
-                    <span className="text-sm font-mono font-bold text-slate-700">{log.time}</span>
+                    <span className="text-sm font-mono font-bold text-slate-800 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                      {log.time}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -221,13 +254,19 @@ export default function HrPage() {
           </div>
         ) : (
           /* Leave Request Form */
-          <div className="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5">
-            <h3 className="font-bold text-slate-900 text-base">ยื่นคำขอลาออนไลน์ (Leave Request)</h3>
+          <div className="max-w-2xl mx-auto bg-white rounded-3xl border border-slate-200 shadow-md p-6 sm:p-8 space-y-5">
+            <div>
+              <h3 className="font-black text-slate-900 text-lg">ยื่นคำขอลาออนไลน์ (Online Leave Request)</h3>
+              <p className="text-xs text-slate-400 mt-0.5">ระบบจะส่งต่อไปยังหัวหน้าแผนกและรองผู้อำนวยการเพื่อพิจารณาอนุมัติ</p>
+            </div>
 
             {leaveSuccess && (
-              <div className="p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>ส่งคำขอลาไปยังหัวหน้าแผนกและผู้บริหารเรียบร้อยแล้ว</span>
+              <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-xs flex items-center space-x-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                <div>
+                  <p className="font-bold">ส่งคำขอลาเรียบร้อยแล้ว!</p>
+                  <p className="text-emerald-700">ระบบได้แจ้งเตือนหัวหน้างานเพื่อพิจารณาอนุมัติตามลำดับขั้น</p>
+                </div>
               </div>
             )}
 
@@ -237,23 +276,23 @@ export default function HrPage() {
                 <select
                   value={leaveType}
                   onChange={(e: any) => setLeaveType(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
-                  <option value="SICK">ลาป่วย</option>
-                  <option value="BUSINESS">ลากิจส่วนตัว</option>
-                  <option value="VACATION">ลาพักผ่อน</option>
-                  <option value="OFFICIAL_DUTY">ไปราชการ / อบรมพัฒนาวิชาชีพ</option>
+                  <option value="SICK">ลาป่วย (Sick Leave)</option>
+                  <option value="BUSINESS">ลากิจส่วนตัว (Personal Business Leave)</option>
+                  <option value="VACATION">ลาพักผ่อน (Vacation Leave)</option>
+                  <option value="OFFICIAL_DUTY">ไปราชการ / ประชุมอบรม (Official Duty)</option>
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">ตั้งแต่วันที่</label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200"
+                    className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50"
                   />
                 </div>
                 <div>
@@ -262,7 +301,7 @@ export default function HrPage() {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200"
+                    className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50"
                   />
                 </div>
               </div>
@@ -273,17 +312,17 @@ export default function HrPage() {
                   rows={3}
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="ระบุเหตุผล เช่น มีอาการไข้หวัดพบแพทย์..."
-                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  placeholder="ระบุเหตุผล เช่น ติดภารกิจราชการ / มีอาการไข้หวัดพบแพทย์..."
+                  className="w-full text-xs p-3 rounded-xl border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-sarabun"
                   required
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-xs shadow-sm transition-colors"
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-500/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
               >
-                ส่งใบขอลาออนไลน์
+                ส่งคำขอลาออนไลน์
               </button>
             </form>
           </div>
