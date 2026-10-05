@@ -33,12 +33,35 @@ type ClassAttendanceStudent = {
   currentStatus: "PRESENT" | "LATE" | "LEAVE" | "ABSENT"; // สถานะคาบปัจจุบัน
 };
 
+const BASE_WEEK = 8;
+const BASE_DATE = new Date("2026-10-05T00:00:00");
+
+// Calculate teaching date corresponding to week number (1 - 18)
+const getDateForWeek = (weekNum: number): string => {
+  const d = new Date(BASE_DATE);
+  const diffDays = (weekNum - BASE_WEEK) * 7;
+  d.setDate(d.getDate() + diffDays);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 export default function AttendanceClassPage() {
   const [courseCode, setCourseCode] = useState("30204-2001");
   const [selectedWeek, setSelectedWeek] = useState("8");
   const [date, setDate] = useState("2026-10-05");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSaved, setIsSaved] = useState(false);
+
+  // Automatically update date when teaching week is selected
+  const handleWeekChange = (newWeek: string) => {
+    setSelectedWeek(newWeek);
+    const weekNum = parseInt(newWeek, 10);
+    if (!isNaN(weekNum) && weekNum >= 1 && weekNum <= 18) {
+      setDate(getDateForWeek(weekNum));
+    }
+  };
 
   const [students, setStudents] = useState<ClassAttendanceStudent[]>([
     { id: "std-1", code: "6920901001", name: "นายกิตติคุณ มั่นคง", totalPeriods: 36, attendedPeriods: 34, absentPeriods: 2, currentStatus: "PRESENT" },
@@ -128,7 +151,7 @@ export default function AttendanceClassPage() {
               className="px-4 py-2.5 rounded-2xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-xs font-bold flex items-center space-x-1.5 transition-all shadow-sm hover:scale-105 active:scale-95"
             >
               <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>มาเรียนครบคาบนี้ (1-Click)</span>
+              <span>มาครบคาบที่ {Number(selectedWeek) * 2 - 1}-{Number(selectedWeek) * 2} (1-Click)</span>
             </button>
 
             <button
@@ -172,6 +195,9 @@ export default function AttendanceClassPage() {
                   {courseCode}
                 </span>
                 <span className="text-xs text-slate-400 font-medium">ภาคเรียนที่ 1/2569 • 3 หน่วยกิต (2-2-3)</span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-400/25">
+                  สัปดาห์ที่ {selectedWeek} (คาบที่ {Number(selectedWeek) * 2 - 1}-{Number(selectedWeek) * 2})
+                </span>
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-300 border border-blue-400/25">
                   เกณฑ์ผ่านเวลาเรียน 80%
                 </span>
@@ -187,24 +213,31 @@ export default function AttendanceClassPage() {
 
           <div className="flex flex-wrap items-center gap-3">
             <div>
-              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">สัปดาห์ที่สอน</label>
+              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">สัปดาห์ที่สอน (1-18)</label>
               <select
                 value={selectedWeek}
-                onChange={(e) => setSelectedWeek(e.target.value)}
-                className="text-xs font-bold px-3 py-2 rounded-xl glass-input text-white focus:outline-none"
+                onChange={(e) => handleWeekChange(e.target.value)}
+                className="text-xs font-bold px-3 py-2 rounded-xl glass-input text-white focus:outline-none cursor-pointer"
               >
-                {[...Array(18)].map((_, i) => (
-                  <option key={i + 1} value={i + 1} className="bg-[#111827]">
-                    สัปดาห์ที่ {i + 1} (คาบที่ {i * 2 + 1}-{i * 2 + 2})
-                  </option>
-                ))}
+                {[...Array(18)].map((_, i) => {
+                  const weekNum = i + 1;
+                  const weekDateStr = getDateForWeek(weekNum);
+                  const shortDate = formatThaiDate(weekDateStr, { format: "short" });
+                  return (
+                    <option key={weekNum} value={weekNum} className="bg-[#111827]">
+                      สัปดาห์ที่ {weekNum} : {shortDate} (คาบที่ {weekNum * 2 - 1}-{weekNum * 2})
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
             {/* Thai Date Badge & Picker */}
             <div>
-              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">วันที่สอน (พ.ศ.)</label>
-              <div className="relative flex items-center gap-2 px-3 py-2 rounded-xl bg-black/40 border border-white/10 hover:border-cyan-500/40 transition">
+              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">
+                วันที่สอนประจำสัปดาห์ที่ {selectedWeek} (พ.ศ.)
+              </label>
+              <div className="relative flex items-center gap-2 px-3 py-2 rounded-xl bg-black/40 border border-cyan-500/30 hover:border-cyan-400 transition shadow-inner">
                 <Calendar className="w-4 h-4 text-cyan-400 shrink-0" />
                 <span className="text-xs font-bold text-cyan-300">
                   {formatThaiDate(date, { showDayOfWeek: true })}
@@ -214,7 +247,7 @@ export default function AttendanceClassPage() {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                  title="คลิกเพื่อเลือกวันที่"
+                  title="คลิกเพื่อเลือกหรือปรับเปลี่ยนวันที่"
                 />
               </div>
             </div>
@@ -292,7 +325,7 @@ export default function AttendanceClassPage() {
                   <th className="px-4 py-4 text-center">ขาดสะสม</th>
                   <th className="px-4 py-4 text-center">% เวลาเรียนสะสม</th>
                   <th className="px-4 py-4 text-center">สถานะสิทธิ์สอบ (สอศ.)</th>
-                  <th className="px-5 py-4 text-center">เช็คชื่อคาบนี้</th>
+                  <th className="px-5 py-4 text-center">เช็คชื่อคาบที่ {Number(selectedWeek) * 2 - 1}-{Number(selectedWeek) * 2} ({formatThaiDate(date, { format: "short" })})</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
