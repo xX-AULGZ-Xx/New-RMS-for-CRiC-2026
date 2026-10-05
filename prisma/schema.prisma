@@ -1,0 +1,229 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPERADMIN
+  EXECUTIVE        // ผู้อำนวยการ / รองผู้อำนวยการ
+  HEAD_DEPARTMENT  // หัวหน้าแผนกวิชา / หัวหน้างาน
+  TEACHER          // ครูผู้สอน / ครูที่ปรึกษา
+  STAFF            // เจ้าหน้าที่ธุรการ / สารบรรณ / การเงิน
+  STUDENT          // นักเรียน / นักศึกษา
+  PARENT           // ผู้ปกครอง
+}
+
+enum DocStatus {
+  DRAFT
+  ROUTING
+  ENDORSED
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum DocPriority {
+  NORMAL           // ปกติ
+  URGENT           // ด่วน
+  VERY_URGENT      // ด่วนมาก
+  MOST_URGENT      // ด่วนที่สุด
+}
+
+enum AttendanceStatus {
+  PRESENT          // มา
+  LATE             // สาย
+  LEAVE            // ลา
+  ABSENT           // ขาด
+}
+
+enum AttendanceType {
+  FLAG_CEREMONY    // หน้าเสาธง
+  HOMEROOM         // โฮมรูม
+  PERIOD_CLASS     // รายคาบ
+}
+
+enum LeaveType {
+  SICK             // ลาป่วย
+  BUSINESS         // ลากิจ
+  VACATION         // ลาพักผ่อน
+  OFFICIAL_DUTY    // ไปราชการ / อบรม
+}
+
+model User {
+  id                String       @id @default(uuid())
+  email             String       @unique
+  citizenId         String?      @unique
+  passwordHash      String
+  fullName          String
+  phone             String?
+  role              Role         @default(TEACHER)
+  pinHash           String?      // สำหรับ PIN 6 หลักยืนยันลายเซ็น
+  signatureImg      String?      // Data URI หรือ URL ภาพลายเซ็น
+  avatarUrl         String?
+  isActive          Boolean      @default(true)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  personnelProfile  PersonnelProfile?
+  studentProfile    StudentProfile?
+  documentsCreated  Document[]
+  signatures        DocumentSignature[]
+  routingsAssigned  DocumentRouting[]
+}
+
+model Department {
+  id          String             @id @default(uuid())
+  code        String             @unique // เช่น DEPT-IT, DEPT-ACC
+  name        String             // แผนกวิชาเทคโนโลยีสารสนเทศ
+  headName    String?
+  personnel   PersonnelProfile[]
+  classrooms  Classroom[]
+  createdAt   DateTime           @default(now())
+}
+
+model Classroom {
+  id           String           @id @default(uuid())
+  code         String           @unique // เช่น IT101, AC201
+  name         String           // เช่น สส. 1/1, ทส. 2/1
+  level        String           // ปวช.1, ปวช.2, ปวช.3, ปวส.1, ปวส.2
+  academicYear String           @default("2569")
+  departmentId String
+  department   Department       @relation(fields: [departmentId], references: [id])
+  students     StudentProfile[]
+  createdAt    DateTime         @default(now())
+}
+
+model PersonnelProfile {
+  id             String         @id @default(uuid())
+  userId         String         @unique
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeCode   String?        @unique
+  position       String         // ครูชำนาญการ, รอง ผอ., เจ้าหน้าที่
+  departmentId   String
+  department     Department     @relation(fields: [departmentId], references: [id])
+  timeLogs       StaffTimeLog[]
+  leaveRequests  LeaveRequest[]
+  createdAt      DateTime       @default(now())
+}
+
+model StudentProfile {
+  id            String             @id @default(uuid())
+  userId        String             @unique
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentCode   String             @unique // รหัสนักเรียน 10-11 หลัก
+  classroomId   String
+  classroom     Classroom          @relation(fields: [classroomId], references: [id])
+  parentPhone   String?
+  parentLineId  String?
+  attendances   StudentAttendance[]
+  scores        CourseScore[]
+  createdAt     DateTime           @default(now())
+}
+
+model Document {
+  id               String              @id @default(uuid())
+  docNumber        String?             // เลขที่หนังสือ เช่น วอช. 012/2569
+  title            String
+  abstractContent  String?             @db.Text
+  originalFileUrl  String?
+  stampedPdfUrl    String?
+  priority         DocPriority         @default(NORMAL)
+  status           DocStatus           @default(DRAFT)
+  qrToken          String              @unique @default(uuid())
+  creatorId        String
+  creator          User                @relation(fields: [creatorId], references: [id])
+  routings         DocumentRouting[]
+  signatures       DocumentSignature[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+}
+
+model DocumentRouting {
+  id           String    @id @default(uuid())
+  documentId   String
+  document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  stepOrder    Int
+  targetUserId String
+  targetUser   User      @relation(fields: [targetUserId], references: [id])
+  actionNote   String?   @db.Text // บันทึกเกษียณข้อความ
+  isApproved   Boolean   @default(false)
+  isCompleted  Boolean   @default(false)
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+model DocumentSignature {
+  id           String    @id @default(uuid())
+  documentId   String
+  document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  signerId     String
+  signer       User      @relation(fields: [signerId], references: [id])
+  signatureUrl String    @db.Text
+  signedHash   String    // SHA-256 hash ณ เวลาที่เซ็น
+  pinVerified  Boolean   @default(true)
+  ipAddress    String?
+  signedAt     DateTime  @default(now())
+}
+
+model StudentAttendance {
+  id          String           @id @default(uuid())
+  studentId   String
+  student     StudentProfile   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date        DateTime         @default(now())
+  type        AttendanceType   @default(FLAG_CEREMONY)
+  status      AttendanceStatus @default(PRESENT)
+  source      String           @default("TEACHER_APP") // TEACHER_APP / FINGERPRINT / RFID
+  recordedBy  String?
+  remarks     String?
+  createdAt   DateTime         @default(now())
+}
+
+model StaffTimeLog {
+  id          String           @id @default(uuid())
+  personnelId String
+  personnel   PersonnelProfile @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  timestamp   DateTime         @default(now())
+  type        String           // CHECK_IN / CHECK_OUT
+  latitude    Float?
+  longitude   Float?
+  wifiSsid    String?
+  isVerified  Boolean          @default(true)
+  source      String           @default("SMARTPHONE_GPS")
+  createdAt   DateTime         @default(now())
+}
+
+model LeaveRequest {
+  id          String           @id @default(uuid())
+  personnelId String
+  personnel   PersonnelProfile @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  leaveType   LeaveType        @default(SICK)
+  startDate   DateTime
+  endDate     DateTime
+  totalDays   Float
+  reason      String           @db.Text
+  status      String           @default("PENDING") // PENDING, APPROVED, REJECTED
+  approvedBy  String?
+  createdAt   DateTime         @default(now())
+}
+
+model CourseScore {
+  id          String         @id @default(uuid())
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  courseCode  String         // เช่น 30204-2001
+  courseName  String         // เช่น การพัฒนาโปรแกรมบนอุปกรณ์เคลื่อนที่
+  academicTerm String        @default("1/2569")
+  unit1Score  Float          @default(0)
+  unit2Score  Float          @default(0)
+  midtermScore Float         @default(0)
+  finalScore  Float          @default(0)
+  totalScore  Float          @default(0)
+  grade       String?        // 4.0, 3.5, 3.0, ... 0
+  isStd02Synced Boolean      @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
