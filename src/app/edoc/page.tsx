@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import AppShell from "@/components/AppShell";
 import { signDocumentAction, createSarabanDocumentAction } from "@/lib/actions";
+import PDFViewerModal, { PDFViewerDocProps } from "@/components/PDFViewerModal";
 import {
   FileText,
   CheckCircle2,
@@ -56,6 +57,7 @@ type SarabanDoc = {
   abstractContent: string;
   hasAttachment?: boolean;
   fileName?: string;
+  pdfBlobUrl?: string;
   routings?: Array<{
     order: number;
     title: string;
@@ -72,6 +74,7 @@ export default function EdocPage() {
   const [filterPriority, setFilterPriority] = useState<string>("ALL");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [stampPreviewDoc, setStampPreviewDoc] = useState<SarabanDoc | null>(null);
+  const [pdfViewerDoc, setPdfViewerDoc] = useState<PDFViewerDocProps | null>(null);
 
   // Initial registry documents
   const [documents, setDocuments] = useState<SarabanDoc[]>([
@@ -216,6 +219,7 @@ export default function EdocPage() {
     abstractContent: "",
     hasAttachment: false,
     fileName: "",
+    pdfBlobUrl: "",
   });
   const [isCreatingDoc, setIsCreatingDoc] = useState(false);
 
@@ -244,6 +248,20 @@ export default function EdocPage() {
       category: cat,
       docNumber: getNextNumber(cat),
     }));
+  };
+
+  // Local File Upload
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setNewDocData((prev) => ({
+        ...prev,
+        hasAttachment: true,
+        fileName: file.name,
+        pdfBlobUrl: url,
+      }));
+    }
   };
 
   // Canvas drawing
@@ -322,7 +340,6 @@ export default function EdocPage() {
 
     if (res.success) {
       setSignSuccess(true);
-      // Update local state
       const updatedRoutings = (selectedDoc.routings || []).map((r) =>
         r.order === 3
           ? {
@@ -393,7 +410,8 @@ export default function EdocPage() {
         createdAt: "วันนี้ 5 ต.ค. 2569",
         abstractContent: newDocData.abstractContent,
         hasAttachment: newDocData.hasAttachment,
-        fileName: newDocData.hasAttachment ? "เอกสารแนบ_" + newDocData.docNumber + ".pdf" : undefined,
+        fileName: newDocData.fileName || (newDocData.hasAttachment ? "เอกสารแนบ_" + newDocData.docNumber + ".pdf" : undefined),
+        pdfBlobUrl: newDocData.pdfBlobUrl,
         routings:
           newDocData.routingMode === "APPROVAL_CHAIN"
             ? [
@@ -495,6 +513,8 @@ export default function EdocPage() {
                   docNumber: getNextNumber(prev.category),
                   title: "",
                   abstractContent: "",
+                  fileName: "",
+                  pdfBlobUrl: "",
                 }));
                 setIsCreateModalOpen(true);
               }}
@@ -567,32 +587,42 @@ export default function EdocPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left: Floating Paper Document */}
             <div className="lg:col-span-7 xl:col-span-8 space-y-4">
-              {/* Document Selection Strip */}
-              <div className="flex items-center space-x-2 overflow-x-auto pb-2">
-                {documents
-                  .filter((d) => d.category === "MEMO")
-                  .map((d) => (
-                    <button
-                      key={d.id}
-                      onClick={() => {
-                        setSelectedDoc(d);
-                        setSignSuccess(false);
-                      }}
-                      className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all text-left flex items-center space-x-2 border flex-shrink-0 ${
-                        selectedDoc.id === d.id
-                          ? "bg-cyan-500/20 border-cyan-400/40 text-cyan-300 shadow-md"
-                          : "glass-card border-white/10 text-slate-400 hover:text-white"
-                      }`}
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      <span className="font-mono text-[11px]">{d.docNumber}</span>
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          d.status === "APPROVED" ? "bg-emerald-400" : "bg-amber-400 animate-pulse"
+              {/* Document Selection Strip & PDF View Trigger */}
+              <div className="flex items-center justify-between gap-3 overflow-x-auto pb-2">
+                <div className="flex items-center space-x-2 overflow-x-auto">
+                  {documents
+                    .filter((d) => d.category === "MEMO")
+                    .map((d) => (
+                      <button
+                        key={d.id}
+                        onClick={() => {
+                          setSelectedDoc(d);
+                          setSignSuccess(false);
+                        }}
+                        className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all text-left flex items-center space-x-2 border flex-shrink-0 ${
+                          selectedDoc.id === d.id
+                            ? "bg-cyan-500/20 border-cyan-400/40 text-cyan-300 shadow-md"
+                            : "glass-card border-white/10 text-slate-400 hover:text-white"
                         }`}
-                      ></span>
-                    </button>
-                  ))}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span className="font-mono text-[11px]">{d.docNumber}</span>
+                        <span
+                          className={`w-2 h-2 rounded-full ${
+                            d.status === "APPROVED" ? "bg-emerald-400" : "bg-amber-400 animate-pulse"
+                          }`}
+                        ></span>
+                      </button>
+                    ))}
+                </div>
+
+                <button
+                  onClick={() => setPdfViewerDoc(selectedDoc as any)}
+                  className="px-3.5 py-2 rounded-2xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/30 text-cyan-300 text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm flex-shrink-0"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>เปิดอ่านไฟล์ PDF ต้นฉบับ</span>
+                </button>
               </div>
 
               {/* Floating Paper Preview */}
@@ -606,6 +636,24 @@ export default function EdocPage() {
                     บันทึกข้อความ
                   </h2>
                 </div>
+
+                {/* PDF Attachment Banner */}
+                {selectedDoc.hasAttachment && (
+                  <div
+                    onClick={() => setPdfViewerDoc(selectedDoc as any)}
+                    className="mb-4 p-3 rounded-2xl bg-slate-100 hover:bg-slate-200/80 border border-slate-300 flex items-center justify-between text-xs cursor-pointer transition-colors shadow-xs"
+                  >
+                    <div className="flex items-center space-x-2 text-slate-800">
+                      <Paperclip className="w-4 h-4 text-cyan-700 flex-shrink-0" />
+                      <span className="font-bold">{selectedDoc.fileName || "เอกสารแนบท้าย.pdf"}</span>
+                      <span className="text-[10px] text-slate-500 hidden sm:inline">(คลิกเพื่อเปิดอ่านไฟล์ PDF)</span>
+                    </div>
+                    <span className="text-xs font-bold text-cyan-700 flex items-center space-x-1 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>เปิดดู PDF</span>
+                    </span>
+                  </div>
+                )}
 
                 {/* Header Meta */}
                 <div className="border-b-2 border-slate-900 pb-4 mb-5 text-slate-900 text-xs sm:text-sm font-sarabun space-y-2">
@@ -916,7 +964,7 @@ export default function EdocPage() {
                       <th className="px-5 py-4">จาก (ต้นทาง)</th>
                       <th className="px-5 py-4">เรื่อง</th>
                       <th className="px-3 py-4 text-center">ความเร่งด่วน</th>
-                      <th className="px-4 py-4 text-center">ตราประทับรับ</th>
+                      <th className="px-4 py-4 text-center">ไฟล์ PDF & ตราประทับ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -937,10 +985,13 @@ export default function EdocPage() {
                         <td className="px-5 py-3.5 text-xs font-medium text-slate-200 min-w-[220px]">
                           <p className="line-clamp-1">{doc.title}</p>
                           {doc.hasAttachment && (
-                            <span className="inline-flex items-center space-x-1 text-[10px] text-cyan-400 mt-0.5">
+                            <button
+                              onClick={() => setPdfViewerDoc(doc as any)}
+                              className="inline-flex items-center space-x-1 text-[10px] text-cyan-400 hover:text-cyan-300 hover:underline mt-0.5"
+                            >
                               <Paperclip className="w-3 h-3" />
                               <span>{doc.fileName || "ไฟล์แนบ.pdf"}</span>
-                            </span>
+                            </button>
                           )}
                         </td>
                         <td className="px-3 py-3.5 text-center whitespace-nowrap">
@@ -963,13 +1014,24 @@ export default function EdocPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                          <button
-                            onClick={() => setStampPreviewDoc(doc)}
-                            className="px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-400/30 text-cyan-300 text-xs font-bold transition-all flex items-center space-x-1.5 mx-auto"
-                          >
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>ดูตราประทับรับ</span>
-                          </button>
+                          <div className="flex items-center justify-center space-x-2">
+                            <button
+                              onClick={() => setPdfViewerDoc(doc as any)}
+                              className="px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-300 text-xs font-bold transition-all flex items-center space-x-1"
+                              title="เปิดอ่านไฟล์ PDF ต้นฉบับ"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>ดู PDF</span>
+                            </button>
+                            <button
+                              onClick={() => setStampPreviewDoc(doc)}
+                              className="px-2.5 py-1.5 rounded-xl glass-card hover:bg-white/10 border border-white/15 text-slate-300 text-xs font-bold transition-all flex items-center space-x-1"
+                              title="ดูตราประทับรับสารบรรณ"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>ตราประทับ</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1035,7 +1097,7 @@ export default function EdocPage() {
                       <th className="px-5 py-4">ถึง (หน่วยงานปลายทาง)</th>
                       <th className="px-5 py-4">เรื่อง</th>
                       <th className="px-5 py-4">เจ้าของเรื่อง</th>
-                      <th className="px-4 py-4 text-center">ตราประทับส่ง</th>
+                      <th className="px-4 py-4 text-center">ไฟล์ PDF & ตราประทับ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -1053,23 +1115,37 @@ export default function EdocPage() {
                         <td className="px-5 py-3.5 text-xs font-medium text-slate-200 min-w-[220px]">
                           <p className="line-clamp-1">{doc.title}</p>
                           {doc.hasAttachment && (
-                            <span className="inline-flex items-center space-x-1 text-[10px] text-indigo-300 mt-0.5">
+                            <button
+                              onClick={() => setPdfViewerDoc(doc as any)}
+                              className="inline-flex items-center space-x-1 text-[10px] text-indigo-300 hover:text-indigo-200 hover:underline mt-0.5"
+                            >
                               <Paperclip className="w-3 h-3" />
                               <span>{doc.fileName || "ไฟล์แนบ.pdf"}</span>
-                            </span>
+                            </button>
                           )}
                         </td>
                         <td className="px-5 py-3.5 text-xs text-slate-400 whitespace-nowrap">
                           {doc.creator}
                         </td>
                         <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                          <button
-                            onClick={() => setStampPreviewDoc(doc)}
-                            className="px-3 py-1.5 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/30 text-indigo-300 text-xs font-bold transition-all flex items-center space-x-1.5 mx-auto"
-                          >
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>ดูตราประทับส่ง</span>
-                          </button>
+                          <div className="flex items-center justify-center space-x-2">
+                            <button
+                              onClick={() => setPdfViewerDoc(doc as any)}
+                              className="px-2.5 py-1.5 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/40 text-indigo-300 text-xs font-bold transition-all flex items-center space-x-1"
+                              title="เปิดอ่านไฟล์ PDF ต้นฉบับ"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>ดู PDF</span>
+                            </button>
+                            <button
+                              onClick={() => setStampPreviewDoc(doc)}
+                              className="px-2.5 py-1.5 rounded-xl glass-card hover:bg-white/10 border border-white/15 text-slate-300 text-xs font-bold transition-all flex items-center space-x-1"
+                              title="ดูตราประทับส่งสารบรรณ"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+                              <span>ตราประทับ</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1102,7 +1178,7 @@ export default function EdocPage() {
                       <th className="px-5 py-4">วันที่ออกคำสั่ง</th>
                       <th className="px-5 py-4">เรื่อง</th>
                       <th className="px-5 py-4">ฝ่าย/งานที่รับผิดชอบ</th>
-                      <th className="px-4 py-4 text-center">ดาวน์โหลด</th>
+                      <th className="px-4 py-4 text-center">ดู & ดาวน์โหลด PDF</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -1123,11 +1199,11 @@ export default function EdocPage() {
                         </td>
                         <td className="px-4 py-3.5 text-center whitespace-nowrap">
                           <button
-                            onClick={() => alert(`ดาวน์โหลดไฟล์: ${doc.fileName || doc.docNumber + ".pdf"}`)}
-                            className="px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-400/30 text-purple-300 text-xs font-bold transition-all flex items-center space-x-1.5 mx-auto"
+                            onClick={() => setPdfViewerDoc(doc as any)}
+                            className="px-3.5 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/40 text-purple-300 text-xs font-bold transition-all flex items-center space-x-1.5 mx-auto"
                           >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>PDF</span>
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>เปิดอ่าน PDF</span>
                           </button>
                         </td>
                       </tr>
@@ -1330,19 +1406,29 @@ export default function EdocPage() {
                   />
                 </div>
 
-                {/* Attachment checkbox */}
-                <div className="flex items-center space-x-2 pt-1">
-                  <input
-                    type="checkbox"
-                    id="attachCheck"
-                    checked={newDocData.hasAttachment}
-                    onChange={(e) => setNewDocData({ ...newDocData, hasAttachment: e.target.checked })}
-                    className="w-4 h-4 rounded text-cyan-500 focus:ring-cyan-400"
-                  />
-                  <label htmlFor="attachCheck" className="text-xs text-slate-300 flex items-center space-x-1 cursor-pointer">
-                    <Paperclip className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>แนบไฟล์ดิจิทัล PDF (จำลองระบบสแกนเอกสารต้นฉบับ)</span>
+                {/* PDF File Attachment Picker */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    แนบไฟล์ PDF ต้นฉบับ (รองรับเปิดอ่านไฟล์จริงจากเครื่อง)
                   </label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-cyan-300 border border-white/15 text-xs font-bold cursor-pointer transition-all flex items-center space-x-2 shadow-xs">
+                      <Paperclip className="w-4 h-4" />
+                      <span>{newDocData.fileName ? "เปลี่ยนไฟล์ PDF" : "เลือกไฟล์ PDF จากเครื่อง..."}</span>
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                      />
+                    </label>
+                    {newDocData.fileName && (
+                      <span className="text-xs text-emerald-300 font-mono flex items-center space-x-1 bg-emerald-500/15 border border-emerald-400/25 px-3 py-1.5 rounded-xl">
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="truncate max-w-xs">{newDocData.fileName}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Submit & Cancel */}
@@ -1423,14 +1509,35 @@ export default function EdocPage() {
                 </p>
               </div>
 
-              <button
-                onClick={() => setStampPreviewDoc(null)}
-                className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs transition-colors"
-              >
-                ปิดหน้าต่าง
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    const doc = stampPreviewDoc;
+                    setStampPreviewDoc(null);
+                    setPdfViewerDoc(doc as any);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/30 font-bold text-xs transition-colors flex items-center justify-center space-x-1.5"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>เปิดอ่าน PDF เต็มหน้า</span>
+                </button>
+                <button
+                  onClick={() => setStampPreviewDoc(null)}
+                  className="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs transition-colors"
+                >
+                  ปิดหน้าต่าง
+                </button>
+              </div>
             </div>
           </div>
+        )}
+
+        {/* MODAL: FULL MACOS STYLE PDF DOCUMENT VIEWER */}
+        {pdfViewerDoc && (
+          <PDFViewerModal
+            doc={pdfViewerDoc}
+            onClose={() => setPdfViewerDoc(null)}
+          />
         )}
       </div>
     </AppShell>
