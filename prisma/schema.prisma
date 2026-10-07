@@ -94,6 +94,7 @@ model Classroom {
   departmentId String
   department   Department       @relation(fields: [departmentId], references: [id])
   students     StudentProfile[]
+  schedules    ClassSchedule[]
   createdAt    DateTime         @default(now())
 }
 
@@ -298,4 +299,59 @@ model SystemBackupLog {
   status     String   // SUCCESS, FAILED
   executedBy String   // Admin or SYSTEM
   createdAt  DateTime @default(now())
+}
+
+model ClassSchedule {
+  id           String    @id @default(uuid())
+  courseCode   String    // เช่น 20204-2001
+  courseName   String    // การพัฒนาโปรแกรมบนอุปกรณ์เคลื่อนที่
+  classroomId  String    // เช่น ห้อง IT101 (ปวช. 1/1)
+  classroom    Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  teacherName  String    // เช่น อาจารย์สมชาย ปัญญาดี
+  teacherId    String?   // User ID if assigned
+  dayOfWeek    Int       // 1 = Monday, 2 = Tuesday, 3 = Wednesday, 4 = Thursday, 5 = Friday
+  periodStart  Int       // 1 - 10
+  periodEnd    Int       // 1 - 10
+  roomNumber   String    // เช่น Lab IT 1, ห้อง 421
+  colorTheme   String?   @default("cyan") // cyan, purple, emerald, amber, rose, blue
+  academicTerm String    @default("1/2569")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model CourseScoreWeight {
+  id              String   @id @default(uuid())
+  courseCode      String   // เช่น 20204-2001
+  courseName      String
+  academicTerm    String   @default("1/2569")
+  affectiveWeight Float    @default(20) // จิตพิสัย / คุณธรรมจริยธรรม
+  taskWeight      Float    @default(40) // ภาระงาน / ปฏิบัติการ
+  midtermWeight   Float    @default(20) // สอบกลางภาค
+  finalWeight     Float    @default(20) // สอบปลายภาค
+  totalWeight     Float    @default(100)
+  updatedAt       DateTime @updatedAt
+
+  @@unique([courseCode, academicTerm])
+}
+
+model TeachingLog {
+  id              String    @id @default(uuid())
+  courseCode      String
+  courseName      String
+  classroomId     String?
+  weekNumber      Int       // สัปดาห์ที่ 1 - 18
+  date            DateTime
+  topic           String    // แผนการจัดการเรียนรู้ / หัวข้อเรื่อง
+  learningOutcome String?   @db.Text // ผลการจัดการเรียนรู้
+  totalStudents   Int       @default(0)
+  presentCount    Int       @default(0)
+  absentCount     Int       @default(0)
+  lateCount       Int       @default(0)
+  leaveCount      Int       @default(0)
+  problems        String?   @db.Text // ปัญหาและอุปสรรค
+  solutions       String?   @db.Text // แนวทางแก้ไข / สอนซ่อมเสริม
+  teacherName     String
+  teacherId       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
