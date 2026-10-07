@@ -83,6 +83,7 @@ model Department {
   personnel   PersonnelProfile[]
   classrooms  Classroom[]
   courses     Course[]
+  templates   DocumentTemplate[]
   createdAt   DateTime           @default(now())
 }
 
@@ -173,6 +174,28 @@ model DocumentSignature {
   pinVerified  Boolean   @default(true)
   ipAddress    String?
   signedAt     DateTime  @default(now())
+}
+
+model DocumentTemplate {
+  id              String       @id @default(uuid())
+  code            String       @unique // เช่น TPL-MEMO-001, TPL-ORDER-002
+  title           String       // เช่น บันทึกข้อความขออนุมัติจัดโครงการพัฒนาทักษะวิชาชีพ
+  category        String       @default("MEMO") // MEMO, OUTBOUND, ORDER, CIRCULAR, FORM
+  departmentId    String?
+  department      Department?  @relation(fields: [departmentId], references: [id])
+  description     String?      @db.Text // คำอธิบายหรือคำแนะนำในการใช้แบบฟอร์ม
+  defaultOrigin   String?      // หน่วยงานต้นเรื่อง เช่น แผนกวิชาเทคโนโลยีสารสนเทศ
+  defaultReceiver String?      // เรียน เช่น ผู้อำนวยการวิทยาลัยอาชีวศึกษาเชียงราย
+  subjectPrefix   String?      // คำขึ้นต้นเรื่อง เช่น ขออนุมัติ..., ขอความอนุเคราะห์...
+  bodyContent     String       @db.Text // เนื้อหาแม่แบบ (รองรับ placeholder เช่น {{department}}, {{date}}, {{title}}, {{amount}})
+  variablesJson   String?      @db.Text // JSON รายการตัวแปรที่ให้ผู้ใช้กรอกเติมคำในช่องว่าง เช่น ["department", "amount", "targetDate"]
+  priority        DocPriority  @default(NORMAL)
+  sampleFileUrl   String?      @db.Text
+  tags            String?      // แท็กค้นหา เช่น "โครงการ, งบประมาณ, ฝึกงาน, กิจกรรม"
+  usageCount      Int          @default(0)
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 }
 
 model StudentAttendance {

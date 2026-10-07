@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AppShell from "@/components/AppShell";
 import { createSarabanDocumentAction } from "@/lib/actions";
+import { getDocumentTemplatesAction, DocumentTemplateItem } from "@/lib/edoc-actions";
 import PDFViewerModal, { PDFViewerDocProps } from "@/components/PDFViewerModal";
 import {
   FileText,
@@ -18,7 +19,8 @@ import {
   UserCheck,
   SendHorizontal,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  LayoutTemplate
 } from "lucide-react";
 
 export default function EdocCreatePage() {
@@ -43,6 +45,42 @@ export default function EdocCreatePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pdfViewerDoc, setPdfViewerDoc] = useState<PDFViewerDocProps | null>(null);
+
+  const [templates, setTemplates] = useState<DocumentTemplateItem[]>([]);
+  const [selectedTemplateCode, setSelectedTemplateCode] = useState<string>("");
+  const [templateNotice, setTemplateNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 1. Fetch templates
+    getDocumentTemplatesAction().then((res) => {
+      if (res.success && res.templates) {
+        setTemplates(res.templates);
+      }
+    });
+
+    // 2. Check if preset was passed from /edoc/templates
+    if (typeof window !== "undefined") {
+      const presetRaw = sessionStorage.getItem("edoc_preset_from_template");
+      if (presetRaw) {
+        try {
+          const preset = JSON.parse(presetRaw);
+          setNewDocData((prev) => ({
+            ...prev,
+            category: preset.category || prev.category,
+            docNumber: getNextNumber(preset.category || prev.category),
+            title: preset.title || prev.title,
+            originOrg: preset.originOrg || prev.originOrg,
+            receiverOrg: preset.receiverOrg || prev.receiverOrg,
+            abstractContent: preset.abstractContent || prev.abstractContent,
+            priority: preset.priority || prev.priority,
+          }));
+          setSelectedTemplateCode(preset.templateCode || "");
+          setTemplateNotice(`เติมข้อมูลจากแม่แบบ "${preset.templateCode}" เรียบร้อยแล้ว`);
+          sessionStorage.removeItem("edoc_preset_from_template");
+        } catch (e) {}
+      }
+    }
+  }, []);
 
   const getNextNumber = (category: string) => {
     const randomCount = Math.floor(Math.random() * 40) + 480;
@@ -180,6 +218,69 @@ export default function EdocCreatePage() {
         {/* Form Container */}
         <div className="glass-island rounded-3xl border border-white/15 p-6 sm:p-8 shadow-2xl space-y-6 backdrop-blur-2xl">
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Template Notice Alert */}
+            {templateNotice && (
+              <div className="p-3.5 rounded-2xl bg-amber-950/60 border border-amber-500/40 text-amber-200 text-xs flex items-center justify-between animate-fade-in">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="font-bold">{templateNotice}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTemplateNotice(null)}
+                  className="text-[11px] px-2 py-0.5 rounded-lg bg-white/10 hover:bg-white/20 text-white"
+                >
+                  ปิด
+                </button>
+              </div>
+            )}
+
+            {/* Template Quick Loader Bar */}
+            <div className="bg-amber-500/10 border border-amber-500/20 p-3.5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center space-x-2.5">
+                <LayoutTemplate className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="font-bold text-amber-200">
+                  เลือกใช้แม่แบบเอกสาร (Template):
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <select
+                  value={selectedTemplateCode}
+                  onChange={(e) => {
+                    const t = templates.find((x) => x.code === e.target.value);
+                    if (t) {
+                      setSelectedTemplateCode(t.code);
+                      setNewDocData((prev) => ({
+                        ...prev,
+                        category: (t.category as any) || prev.category,
+                        docNumber: getNextNumber(t.category),
+                        title: t.title,
+                        originOrg: t.defaultOrigin || prev.originOrg,
+                        receiverOrg: t.defaultReceiver || prev.receiverOrg,
+                        abstractContent: t.bodyContent,
+                        priority: t.priority as any,
+                      }));
+                      setTemplateNotice(`โหลดข้อมูลจากแม่แบบ "${t.code} - ${t.title}" สำเร็จ`);
+                    }
+                  }}
+                  className="p-2 rounded-xl bg-black/40 border border-white/10 text-white focus:outline-none text-xs"
+                >
+                  <option value="">-- หรือเลือกแม่แบบเอกสาร --</option>
+                  {templates.map((t) => (
+                    <option key={t.id} value={t.code} className="bg-[#111827]">
+                      {t.code} - {t.title}
+                    </option>
+                  ))}
+                </select>
+                <Link
+                  href="/edoc/templates"
+                  className="px-3 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold whitespace-nowrap transition-colors"
+                >
+                  จัดการแม่แบบ
+                </Link>
+              </div>
+            </div>
+
             {/* Category Switcher */}
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-2">

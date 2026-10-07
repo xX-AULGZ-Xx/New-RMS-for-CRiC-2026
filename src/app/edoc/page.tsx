@@ -24,7 +24,9 @@ import {
   Building,
   TrendingUp,
   FileCheck2,
-  Lock
+  Lock,
+  LayoutTemplate,
+  Copy
 } from "lucide-react";
 
 export default function EdocHubPage() {
@@ -33,6 +35,20 @@ export default function EdocHubPage() {
 
   // Categories list
   const categories = [
+    {
+      id: "templates",
+      title: "การจัดการแม่แบบเอกสาร (Templates)",
+      subtitle: "Template Library & Builder",
+      description: "คลังแม่แบบบันทึกข้อความ หนังสือภายนอก คำสั่ง และประกาศ สอศ. พร้อมระบบเติมคำในช่องว่างและสร้างเอกสารด่วน",
+      href: "/edoc/templates",
+      badge: "แม่แบบมาตรฐาน",
+      badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+      icon: LayoutTemplate,
+      iconBg: "bg-amber-500/20 text-amber-400 border-amber-400/30",
+      glowColor: "from-amber-500/10 to-orange-500/10",
+      stats: "รองรับ Placeholder {{ตัวแปร}}",
+      actionText: "จัดการแม่แบบเอกสาร",
+    },
     {
       id: "review",
       title: "แฟ้มเสนอเกษียณ & ลงนาม",
