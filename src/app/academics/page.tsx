@@ -34,7 +34,10 @@ import {
   UserCheck,
   AlertTriangle,
   MoveRight,
-  Eye
+  Eye,
+  Filter,
+  Layers,
+  Info,
 } from "lucide-react";
 import { formatThaiDate } from "@/lib/thai-date";
 import {
@@ -47,9 +50,13 @@ import {
   getTeachingLogsAction,
   saveTeachingLogAction,
   getAttendanceStatsForTeachingLogAction,
+  getCoursesAction,
+  saveCourseAction,
+  deleteCourseAction,
   ScheduleItem,
   ScoreWeightData,
   TeachingLogItem,
+  CourseItem,
 } from "@/lib/academic-actions";
 import { getAcademicCalendarAction } from "@/lib/settings-actions";
 
@@ -64,7 +71,7 @@ type ScoreItem = {
 };
 
 export default function AcademicsPage() {
-  const [activeTab, setActiveTab] = useState<"SCHEDULE" | "GRADING" | "TEACHING_LOG">("SCHEDULE");
+  const [activeTab, setActiveTab] = useState<"SCHEDULE" | "GRADING" | "TEACHING_LOG" | "COURSES">("SCHEDULE");
 
   // Feedback banner state
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -148,6 +155,41 @@ export default function AcademicsPage() {
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printLogData, setPrintLogData] = useState<any>(null);
 
+  // ==========================================
+  // TAB 4: COURSE CATALOG STATE
+  // ==========================================
+  const [courses, setCourses] = useState<CourseItem[]>([]);
+  const [courseLevelFilter, setCourseLevelFilter] = useState<string>("ALL");
+  const [courseDeptFilter, setCourseDeptFilter] = useState<string>("ALL");
+  const [courseCategoryFilter, setCourseCategoryFilter] = useState<string>("ALL");
+  const [courseSearch, setCourseSearch] = useState<string>("");
+  const [courseDepartments, setCourseDepartments] = useState<Array<{ id: string; name: string; code: string }>>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState<boolean>(false);
+
+  // Course Modal (Add / Edit)
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
+  const [isSavingCourse, setIsSavingCourse] = useState(false);
+  const [courseModalError, setCourseModalError] = useState<string | null>(null);
+  const [courseForm, setCourseForm] = useState({
+    code: "",
+    nameTh: "",
+    nameEn: "",
+    level: "ปวช.",
+    credits: 3,
+    theoryHours: 2,
+    practiceHours: 2,
+    totalHours: 4,
+    category: "หมวดวิชาสมรรถนะวิชาชีพเฉพาะ",
+    departmentId: "",
+    description: "",
+    competency: "",
+    isActive: true,
+  });
+
+  // Course Detail Preview Modal
+  const [previewCourse, setPreviewCourse] = useState<CourseItem | null>(null);
+
   // Academic Calendar Info for Weeks (from MySQL)
   const [calendarInfo, setCalendarInfo] = useState<{ totalWeeks: number; startDate: string }>({
     totalWeeks: 18,
@@ -160,6 +202,7 @@ export default function AcademicsPage() {
     loadScoreWeight();
     loadTeachingLogs();
     loadCalendar();
+    loadCourses();
   }, []);
 
   const loadSchedules = async () => {
@@ -225,6 +268,142 @@ export default function AcademicsPage() {
         startDate: res.vc.startDate || "2026-08-17",
       });
     }
+  };
+
+  const loadCourses = async () => {
+    setIsLoadingCourses(true);
+    const res = await getCoursesAction();
+    if (res.success && res.courses) {
+      setCourses(res.courses);
+      if (res.departments) {
+        setCourseDepartments(res.departments);
+      }
+    }
+    setIsLoadingCourses(false);
+  };
+
+  const handleOpenAddCourse = () => {
+    setEditingCourseId(null);
+    setCourseModalError(null);
+    setCourseForm({
+      code: "",
+      nameTh: "",
+      nameEn: "",
+      level: "ปวช.",
+      credits: 3,
+      theoryHours: 2,
+      practiceHours: 2,
+      totalHours: 4,
+      category: "หมวดวิชาสมรรถนะวิชาชีพเฉพาะ",
+      departmentId: courseDepartments[0]?.id || "",
+      description: "",
+      competency: "",
+      isActive: true,
+    });
+    setIsCourseModalOpen(true);
+  };
+
+  const handleOpenEditCourse = (c: CourseItem) => {
+    setEditingCourseId(c.id);
+    setCourseModalError(null);
+    setCourseForm({
+      code: c.code,
+      nameTh: c.nameTh,
+      nameEn: c.nameEn || "",
+      level: c.level,
+      credits: c.credits,
+      theoryHours: c.theoryHours,
+      practiceHours: c.practiceHours,
+      totalHours: c.totalHours,
+      category: c.category,
+      departmentId: c.departmentId || "",
+      description: c.description || "",
+      competency: c.competency || "",
+      isActive: c.isActive,
+    });
+    setIsCourseModalOpen(true);
+  };
+
+  const handleSaveCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingCourse(true);
+    setCourseModalError(null);
+
+    const res = await saveCourseAction({
+      id: editingCourseId || undefined,
+      ...courseForm,
+    });
+
+    setIsSavingCourse(false);
+    if (res.success) {
+      setIsCourseModalOpen(false);
+      loadCourses();
+      setFeedback({
+        type: "success",
+        message: editingCourseId
+          ? `แก้ไขรายวิชา ${courseForm.code} สำเร็จ`
+          : `เพิ่มรายวิชา ${courseForm.code} ลงในหลักสูตรสำเร็จ`,
+      });
+      setTimeout(() => setFeedback(null), 4000);
+    } else {
+      setCourseModalError(res.error || "เกิดข้อผิดพลาดในการบันทึกรายวิชา");
+    }
+  };
+
+  const handleDeleteCourse = async (id: string, code: string, nameTh: string) => {
+    if (!confirm(`คุณต้องการลบรายวิชา "${code} - ${nameTh}" ใช่หรือไม่?`)) return;
+
+    const res = await deleteCourseAction(id);
+    if (res.success) {
+      loadCourses();
+      setFeedback({ type: "success", message: `ลบรายวิชา ${code} เรียบร้อยแล้ว` });
+      setTimeout(() => setFeedback(null), 4000);
+    } else {
+      setFeedback({ type: "error", message: res.error || "เกิดข้อผิดพลาดในการลบรายวิชา" });
+      setTimeout(() => setFeedback(null), 4000);
+    }
+  };
+
+  const filteredCourses = courses.filter((c) => {
+    const matchesLevel = courseLevelFilter === "ALL" || c.level === courseLevelFilter;
+    const matchesDept =
+      courseDeptFilter === "ALL" ||
+      (courseDeptFilter === "CENTRAL" ? !c.departmentId : c.departmentId === courseDeptFilter);
+    const matchesCategory = courseCategoryFilter === "ALL" || c.category === courseCategoryFilter;
+    const q = courseSearch.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      c.code.toLowerCase().includes(q) ||
+      c.nameTh.toLowerCase().includes(q) ||
+      (c.nameEn && c.nameEn.toLowerCase().includes(q));
+    return matchesLevel && matchesDept && matchesCategory && matchesSearch;
+  });
+
+  const exportCoursesCSV = () => {
+    const headers =
+      "รหัสวิชา,ชื่อวิชา (ภาษาไทย),ชื่อวิชา (ภาษาอังกฤษ),ระดับ,หมวดวิชา,ทฤษฎี(ชม.),ปฏิบัติ(ชม.),หน่วยกิต,รวมชั่วโมง,แผนกวิชา,สถานะ\n";
+    const rows = filteredCourses
+      .map((c) => {
+        const dept = c.departmentName || "ส่วนกลาง/ทุกแผนก";
+        const status = c.isActive ? "เปิดสอน" : "ปิดสอน";
+        return `"${c.code}","${c.nameTh}","${c.nameEn || ""}","${c.level}","${c.category}",${c.theoryHours},${c.practiceHours},${c.credits},${c.totalHours},"${dept}","${status}"`;
+      })
+      .join("\n");
+
+    const blob = new Blob(["\uFEFF" + headers + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `CRiC_Courses_Catalog_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setFeedback({
+      type: "success",
+      message: `ส่งออกข้อมูลรายวิชาหลักสูตรจำนวน ${filteredCourses.length} วิชา สำเร็จเรียบร้อยแล้ว`,
+    });
+    setTimeout(() => setFeedback(null), 4000);
   };
 
   // Re-fetch schedules when filter changes
@@ -484,6 +663,24 @@ export default function AcademicsPage() {
                 <span>จัดคาบเรียนใหม่ลงตาราง</span>
               </button>
             )}
+            {activeTab === "COURSES" && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={exportCoursesCSV}
+                  className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center space-x-2 border border-white/10 transition-all active:scale-95"
+                >
+                  <Download className="w-4 h-4 text-slate-300" />
+                  <span>ส่งออก CSV</span>
+                </button>
+                <button
+                  onClick={handleOpenAddCourse}
+                  className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-xs flex items-center space-x-2 shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 border border-indigo-400/30"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>เพิ่มรายวิชาหลักสูตร</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -519,6 +716,7 @@ export default function AcademicsPage() {
             { id: "SCHEDULE", label: "จัดตารางเรียน & ตารางสอน", icon: Calendar, badge: `${schedules.length} คาบ` },
             { id: "GRADING", label: "บันทึกคะแนน & การตั้งค่าการเก็บคะแนน", icon: Award, badge: `${totalWeightSum}%` },
             { id: "TEACHING_LOG", label: "บันทึกหลังการสอน (สอศ.)", icon: FileText, badge: `${teachingLogs.length} สัปดาห์` },
+            { id: "COURSES", label: "จัดการรายวิชาหลักสูตร", icon: BookOpen, badge: `${courses.length} วิชา` },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1186,6 +1384,304 @@ export default function AcademicsPage() {
         )}
 
         {/* ============================================================== */}
+        {/* TAB 4: COURSE CATALOG MANAGEMENT                              */}
+        {/* ============================================================== */}
+        {activeTab === "COURSES" && (
+          <div className="space-y-6 animate-fade-in">
+            {/* KPI Summary Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="glass-island p-4 rounded-3xl border border-white/10 shadow-lg relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-xl group-hover:bg-cyan-500/20 transition-all pointer-events-none" />
+                <div className="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+                  <span>รายวิชาทั้งหมด</span>
+                  <BookOpen className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div className="text-2xl font-black text-white">{courses.length}</div>
+                <div className="text-[11px] text-cyan-300 mt-1">บรรจุในหลักสูตรสถานศึกษา</div>
+              </div>
+
+              <div className="glass-island p-4 rounded-3xl border border-white/10 shadow-lg relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all pointer-events-none" />
+                <div className="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+                  <span>ระดับ ปวช.</span>
+                  <Award className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="text-2xl font-black text-white">
+                  {courses.filter((c) => c.level === "ปวช.").length}
+                </div>
+                <div className="text-[11px] text-emerald-300 mt-1">หลักสูตร ปวช. 2562/2567</div>
+              </div>
+
+              <div className="glass-island p-4 rounded-3xl border border-white/10 shadow-lg relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl group-hover:bg-purple-500/20 transition-all pointer-events-none" />
+                <div className="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+                  <span>ระดับ ปวส.</span>
+                  <GraduationCap className="w-4 h-4 text-purple-400" />
+                </div>
+                <div className="text-2xl font-black text-white">
+                  {courses.filter((c) => c.level === "ปวส.").length}
+                </div>
+                <div className="text-[11px] text-purple-300 mt-1">หลักสูตร ปวส. 2563/2567</div>
+              </div>
+
+              <div className="glass-island p-4 rounded-3xl border border-white/10 shadow-lg relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all pointer-events-none" />
+                <div className="flex items-center justify-between text-slate-400 text-xs font-bold mb-2">
+                  <span>หน่วยกิตสะสม</span>
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                </div>
+                <div className="text-2xl font-black text-white">
+                  {courses.reduce((sum, c) => sum + c.credits, 0)}
+                </div>
+                <div className="text-[11px] text-amber-300 mt-1">รวมทุกหมวดวิชา</div>
+              </div>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="glass-island p-5 rounded-3xl border border-white/10 shadow-xl space-y-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                {/* Level Pills */}
+                <div className="flex items-center space-x-2 bg-black/40 border border-white/10 p-1.5 rounded-2xl w-fit">
+                  {[
+                    { id: "ALL", label: "ทุกระดับชั้น" },
+                    { id: "ปวช.", label: "ระดับ ปวช." },
+                    { id: "ปวส.", label: "ระดับ ปวส." },
+                  ].map((lvl) => (
+                    <button
+                      key={lvl.id}
+                      onClick={() => setCourseLevelFilter(lvl.id)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        courseLevelFilter === lvl.id
+                          ? "bg-indigo-600 text-white shadow-md font-black"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {lvl.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative flex-1 max-w-md">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={courseSearch}
+                    onChange={(e) => setCourseSearch(e.target.value)}
+                    placeholder="ค้นหารหัสวิชา เช่น 20204, ชื่อวิชาภาษาไทย หรืออังกฤษ..."
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl glass-input text-xs text-white placeholder-slate-500 focus:outline-none"
+                  />
+                  {courseSearch && (
+                    <button
+                      onClick={() => setCourseSearch("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Department & Category Select Filter Bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-white/5 text-xs">
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">กรองตามแผนกวิชา</label>
+                  <select
+                    value={courseDeptFilter}
+                    onChange={(e) => setCourseDeptFilter(e.target.value)}
+                    className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none"
+                  >
+                    <option value="ALL" className="bg-[#111827]">ทุกแผนกวิชา</option>
+                    <option value="CENTRAL" className="bg-[#111827]">วิชาส่วนกลาง / แกนกลาง</option>
+                    {courseDepartments.map((d) => (
+                      <option key={d.id} value={d.id} className="bg-[#111827]">
+                        {d.name} ({d.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">กรองตามหมวดวิชา</label>
+                  <select
+                    value={courseCategoryFilter}
+                    onChange={(e) => setCourseCategoryFilter(e.target.value)}
+                    className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none"
+                  >
+                    <option value="ALL" className="bg-[#111827]">ทุกหมวดวิชา</option>
+                    <option value="หมวดวิชาสมรรถนะแกนกลาง" className="bg-[#111827]">หมวดวิชาสมรรถนะแกนกลาง</option>
+                    <option value="หมวดวิชาสมรรถนะวิชาชีพพื้นฐาน" className="bg-[#111827]">หมวดวิชาสมรรถนะวิชาชีพพื้นฐาน</option>
+                    <option value="หมวดวิชาสมรรถนะวิชาชีพเฉพาะ" className="bg-[#111827]">หมวดวิชาสมรรถนะวิชาชีพเฉพาะ</option>
+                    <option value="หมวดวิชาสมรรถนะวิชาชีพเลือก" className="bg-[#111827]">หมวดวิชาสมรรถนะวิชาชีพเลือก</option>
+                    <option value="หมวดวิชาฝึกประสบการณ์สมรรถนะวิชาชีพ" className="bg-[#111827]">หมวดวิชาฝึกประสบการณ์สมรรถนะวิชาชีพ</option>
+                    <option value="โครงงานพัฒนาสมรรถนะวิชาชีพ" className="bg-[#111827]">โครงงานพัฒนาสมรรถนะวิชาชีพ</option>
+                    <option value="หมวดวิชาเลือกเสรี" className="bg-[#111827]">หมวดวิชาเลือกเสรี</option>
+                    <option value="กิจกรรมเสริมหลักสูตร" className="bg-[#111827]">กิจกรรมเสริมหลักสูตร</option>
+                  </select>
+                </div>
+
+                <div className="flex items-end">
+                  <div className="text-slate-400 text-xs flex items-center space-x-1.5 py-2.5">
+                    <Sliders className="w-4 h-4 text-indigo-400" />
+                    <span>แสดงผล <strong>{filteredCourses.length}</strong> จาก <strong>{courses.length}</strong> วิชา</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Courses Table */}
+            <div className="glass-island rounded-3xl border border-white/10 shadow-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-white/5 border-b border-white/10 text-slate-300 font-bold uppercase tracking-wider text-[11px]">
+                      <th className="py-4 px-4">รหัสวิชา</th>
+                      <th className="py-4 px-4">ชื่อรายวิชา (ไทย / อังกฤษ)</th>
+                      <th className="py-4 px-3 text-center">ระดับ</th>
+                      <th className="py-4 px-3">หมวดวิชา</th>
+                      <th className="py-4 px-3 text-center">โครงสร้าง (ท-ป-น)</th>
+                      <th className="py-4 px-3">แผนกวิชา</th>
+                      <th className="py-4 px-3 text-center">สถานะ</th>
+                      <th className="py-4 px-4 text-center">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {filteredCourses.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} className="py-12 text-center text-slate-400">
+                          <BookOpen className="w-10 h-10 mx-auto text-slate-600 mb-3" />
+                          <p className="font-bold text-sm text-slate-300">ไม่พบรายวิชาที่ตรงกับเงื่อนไข</p>
+                          <p className="text-xs text-slate-500 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่ม "เพิ่มรายวิชาหลักสูตร" ด้านบน</p>
+                          <button
+                            onClick={handleOpenAddCourse}
+                            className="mt-4 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs"
+                          >
+                            + เพิ่มรายวิชาแรก
+                          </button>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredCourses.map((c) => (
+                        <tr
+                          key={c.id}
+                          className="hover:bg-white/[0.03] transition-colors group"
+                        >
+                          {/* Code */}
+                          <td className="py-3.5 px-4">
+                            <span className="font-mono font-bold text-indigo-300 bg-indigo-950/60 border border-indigo-500/30 px-2.5 py-1 rounded-lg">
+                              {c.code}
+                            </span>
+                          </td>
+
+                          {/* Name */}
+                          <td className="py-3.5 px-4 max-w-xs">
+                            <div className="font-bold text-white group-hover:text-indigo-200 transition-colors">
+                              {c.nameTh}
+                            </div>
+                            {c.nameEn && (
+                              <div className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
+                                {c.nameEn}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Level */}
+                          <td className="py-3.5 px-3 text-center">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                c.level === "ปวช."
+                                  ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/30"
+                                  : "bg-purple-500/10 text-purple-300 border border-purple-500/30"
+                              }`}
+                            >
+                              {c.level}
+                            </span>
+                          </td>
+
+                          {/* Category */}
+                          <td className="py-3.5 px-3">
+                            <span className="text-slate-300 text-[11px] bg-white/5 border border-white/5 px-2 py-0.5 rounded-lg line-clamp-1 max-w-[180px]">
+                              {c.category}
+                            </span>
+                          </td>
+
+                          {/* Credits (Theory - Practice - Credits) */}
+                          <td className="py-3.5 px-3 text-center">
+                            <div className="inline-flex items-center space-x-1 font-mono font-bold text-white bg-black/40 px-2.5 py-1 rounded-xl border border-white/10" title={`ทฤษฎี ${c.theoryHours} ชม. - ปฏิบัติ ${c.practiceHours} ชม. - ${c.credits} หน่วยกิต (รวม ${c.totalHours} ชม./สัปดาห์)`}>
+                              <span className="text-emerald-400">{c.theoryHours}</span>
+                              <span className="text-slate-500">-</span>
+                              <span className="text-cyan-400">{c.practiceHours}</span>
+                              <span className="text-slate-500">-</span>
+                              <span className="text-amber-400 font-black">{c.credits}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">({c.totalHours} ชม./สัปดาห์)</div>
+                          </td>
+
+                          {/* Department */}
+                          <td className="py-3.5 px-3 text-slate-300 text-xs">
+                            {c.departmentName ? (
+                              <span className="flex items-center space-x-1">
+                                <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate max-w-[120px]">{c.departmentName}</span>
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 text-[11px]">ส่วนกลาง / หมวดทั่วไป</span>
+                            )}
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3.5 px-3 text-center">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                c.isActive
+                                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                  : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                              }`}
+                            >
+                              {c.isActive ? "เปิดสอน" : "ปิดสอน"}
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3.5 px-4 text-center">
+                            <div className="flex items-center justify-center space-x-1.5">
+                              {/* Preview Info Button */}
+                              <button
+                                onClick={() => setPreviewCourse(c)}
+                                title="ดูคำอธิบายและสมรรถนะรายวิชา"
+                                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white transition-all"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              {/* Edit Button */}
+                              <button
+                                onClick={() => handleOpenEditCourse(c)}
+                                title="แก้ไขข้อมูลรายวิชา"
+                                className="p-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 hover:scale-105 transition-all"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              {/* Delete Button */}
+                              <button
+                                onClick={() => handleDeleteCourse(c.id, c.code, c.nameTh)}
+                                title="ลบรายวิชา"
+                                className="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 hover:scale-105 transition-all"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
         {/* SCHEDULE MODAL (ADD / EDIT)                                    */}
         {/* ============================================================== */}
         {isScheduleModalOpen && (
@@ -1227,6 +1723,34 @@ export default function AcademicsPage() {
                     ))}
                   </select>
                 </div>
+
+                {courses.length > 0 && (
+                  <div>
+                    <label className="block font-bold text-slate-300 mb-1">
+                      เลือกจากรายวิชาในหลักสูตร (เลือกเพื่อเติมข้อมูลอัตโนมัติ)
+                    </label>
+                    <select
+                      onChange={(e) => {
+                        const c = courses.find((x) => x.code === e.target.value);
+                        if (c) {
+                          setScheduleForm({
+                            ...scheduleForm,
+                            courseCode: c.code,
+                            courseName: c.nameTh,
+                          });
+                        }
+                      }}
+                      className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none"
+                    >
+                      <option value="">-- หรือเลือกรายวิชาที่มีในหลักสูตร --</option>
+                      {courses.map((c) => (
+                        <option key={c.id} value={c.code} className="bg-[#111827]">
+                          {c.code} - {c.nameTh} ({c.level} | {c.credits} น.)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1438,6 +1962,380 @@ export default function AcademicsPage() {
                   <div>ลงชื่อ..........................................................ครูผู้สอน</div>
                   <div className="font-bold">({printLogData.teacherName})</div>
                   <div className="text-slate-500 text-[11px]">วันที่ {formatThaiDate(printLogData.date)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* COURSE MODAL (ADD / EDIT)                                      */}
+        {/* ============================================================== */}
+        {isCourseModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="glass-island max-w-2xl w-full rounded-3xl border border-white/20 p-6 shadow-2xl space-y-5 animate-scale-up max-h-[92vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-base">
+                      {editingCourseId ? "แก้ไขข้อมูลรายวิชาหลักสูตร" : "เพิ่มรายวิชาใหม่ลงหลักสูตร"}
+                    </h3>
+                    <p className="text-[11px] text-slate-400">กำหนดโครงสร้างหลักสูตรและข้อมูลรายวิชาตามมาตรฐาน สอศ.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsCourseModalOpen(false)}
+                  className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-white/10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {courseModalError && (
+                <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-500/40 text-rose-200 text-xs flex items-start space-x-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <span>{courseModalError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveCourse} className="space-y-4 text-xs">
+                {/* Row 1: Code + Level */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-300 mb-1">
+                      รหัสวิชา <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="เช่น 20204-2001 หรือ 30204-2001"
+                      value={courseForm.code}
+                      onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value })}
+                      className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 mb-1">
+                      ระดับการศึกษา <span className="text-rose-400">*</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCourseForm({ ...courseForm, level: "ปวช." })}
+                        className={`py-2.5 rounded-xl font-bold border transition-all text-center ${
+                          courseForm.level === "ปวช."
+                            ? "bg-cyan-500/20 text-cyan-300 border-cyan-400/50 shadow-sm"
+                            : "glass-card text-slate-400 border-white/5 hover:text-white"
+                        }`}
+                      >
+                        ปวช. (ประกาศนียบัตรวิชาชีพ)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCourseForm({ ...courseForm, level: "ปวส." })}
+                        className={`py-2.5 rounded-xl font-bold border transition-all text-center ${
+                          courseForm.level === "ปวส."
+                            ? "bg-purple-500/20 text-purple-300 border-purple-400/50 shadow-sm"
+                            : "glass-card text-slate-400 border-white/5 hover:text-white"
+                        }`}
+                      >
+                        ปวส. (วิชาชีพชั้นสูง)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: Name Thai */}
+                <div>
+                  <label className="block font-bold text-slate-300 mb-1">
+                    ชื่อรายวิชา (ภาษาไทย) <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น การเขียนโปรแกรมคอมพิวเตอร์เบื้องต้น"
+                    value={courseForm.nameTh}
+                    onChange={(e) => setCourseForm({ ...courseForm, nameTh: e.target.value })}
+                    className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none"
+                  />
+                </div>
+
+                {/* Row 3: Name English */}
+                <div>
+                  <label className="block font-bold text-slate-300 mb-1">ชื่อรายวิชา (ภาษาอังกฤษ)</label>
+                  <input
+                    type="text"
+                    placeholder="เช่น Basic Computer Programming"
+                    value={courseForm.nameEn}
+                    onChange={(e) => setCourseForm({ ...courseForm, nameEn: e.target.value })}
+                    className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none"
+                  />
+                </div>
+
+                {/* Row 4: Category & Department */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-slate-300 mb-1">หมวดวิชา</label>
+                    <select
+                      value={courseForm.category}
+                      onChange={(e) => setCourseForm({ ...courseForm, category: e.target.value })}
+                      className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none"
+                    >
+                      <option value="หมวดวิชาสมรรถนะแกนกลาง" className="bg-[#111827]">หมวดวิชาสมรรถนะแกนกลาง</option>
+                      <option value="หมวดวิชาสมรรถนะวิชาชีพพื้นฐาน" className="bg-[#111827]">หมวดวิชาสมรรถนะวิชาชีพพื้นฐาน</option>
+                      <option value="หมวดวิชาสมรรถนะวิชาชีพเฉพาะ" className="bg-[#111827]">หมวดวิชาสมรรถนะวิชาชีพเฉพาะ</option>
+                      <option value="หมวดวิชาสมรรถนะวิชาชีพเลือก" className="bg-[#111827]">หมวดวิชาสมรรถนะวิชาชีพเลือก</option>
+                      <option value="หมวดวิชาฝึกประสบการณ์สมรรถนะวิชาชีพ" className="bg-[#111827]">หมวดวิชาฝึกประสบการณ์สมรรถนะวิชาชีพ</option>
+                      <option value="โครงงานพัฒนาสมรรถนะวิชาชีพ" className="bg-[#111827]">โครงงานพัฒนาสมรรถนะวิชาชีพ</option>
+                      <option value="หมวดวิชาเลือกเสรี" className="bg-[#111827]">หมวดวิชาเลือกเสรี</option>
+                      <option value="กิจกรรมเสริมหลักสูตร" className="bg-[#111827]">กิจกรรมเสริมหลักสูตร</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-300 mb-1">แผนกวิชาที่รับผิดชอบ</label>
+                    <select
+                      value={courseForm.departmentId}
+                      onChange={(e) => setCourseForm({ ...courseForm, departmentId: e.target.value })}
+                      className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none"
+                    >
+                      <option value="" className="bg-[#111827]">วิชาส่วนกลาง / ทุกแผนกวิชา</option>
+                      {courseDepartments.map((d) => (
+                        <option key={d.id} value={d.id} className="bg-[#111827]">
+                          {d.name} ({d.code})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Row 5: Credits & Hours (ทฤษฎี - ปฏิบัติ - หน่วยกิต) */}
+                <div>
+                  <label className="block font-bold text-slate-300 mb-1">
+                    โครงสร้างหน่วยกิต & ชั่วโมงสอน (ท-ป-น)
+                  </label>
+                  <div className="grid grid-cols-4 gap-2.5 bg-black/30 p-3 rounded-2xl border border-white/5">
+                    <div>
+                      <span className="block text-[11px] text-emerald-400 font-bold mb-1">ทฤษฎี (ชม./สัปดาห์)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={10}
+                        value={courseForm.theoryHours}
+                        onChange={(e) => {
+                          const t = Number(e.target.value) || 0;
+                          setCourseForm({
+                            ...courseForm,
+                            theoryHours: t,
+                            totalHours: t + courseForm.practiceHours,
+                          });
+                        }}
+                        className="w-full p-2 rounded-xl glass-input text-center font-bold text-white focus:outline-none font-mono"
+                      />
+                    </div>
+                    <div>
+                      <span className="block text-[11px] text-cyan-400 font-bold mb-1">ปฏิบัติ (ชม./สัปดาห์)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={10}
+                        value={courseForm.practiceHours}
+                        onChange={(e) => {
+                          const p = Number(e.target.value) || 0;
+                          setCourseForm({
+                            ...courseForm,
+                            practiceHours: p,
+                            totalHours: courseForm.theoryHours + p,
+                          });
+                        }}
+                        className="w-full p-2 rounded-xl glass-input text-center font-bold text-white focus:outline-none font-mono"
+                      />
+                    </div>
+                    <div>
+                      <span className="block text-[11px] text-amber-400 font-bold mb-1">หน่วยกิต (น.)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={10}
+                        value={courseForm.credits}
+                        onChange={(e) => setCourseForm({ ...courseForm, credits: Number(e.target.value) || 0 })}
+                        className="w-full p-2 rounded-xl glass-input text-center font-bold text-white focus:outline-none font-mono"
+                      />
+                    </div>
+                    <div>
+                      <span className="block text-[11px] text-slate-400 font-bold mb-1">รวม (ชม./สัปดาห์)</span>
+                      <div className="w-full p-2 rounded-xl bg-white/5 text-center font-bold text-white border border-white/10 font-mono">
+                        {courseForm.theoryHours + courseForm.practiceHours}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 6: Description */}
+                <div>
+                  <label className="block font-bold text-slate-300 mb-1">คำอธิบายรายวิชา (Course Description)</label>
+                  <textarea
+                    rows={3}
+                    placeholder="ศึกษาและปฏิบัติเกี่ยวกับ..."
+                    value={courseForm.description}
+                    onChange={(e) => setCourseForm({ ...courseForm, description: e.target.value })}
+                    className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none"
+                  />
+                </div>
+
+                {/* Row 7: Competency */}
+                <div>
+                  <label className="block font-bold text-slate-300 mb-1">สมรรถนะรายวิชา (Course Competencies)</label>
+                  <textarea
+                    rows={2}
+                    placeholder="1. แสดงความรู้เกี่ยวกับ... 2. ปฏิบัติงานด้าน..."
+                    value={courseForm.competency}
+                    onChange={(e) => setCourseForm({ ...courseForm, competency: e.target.value })}
+                    className="w-full p-2.5 rounded-xl glass-input text-white focus:outline-none"
+                  />
+                </div>
+
+                {/* Row 8: Active Toggle */}
+                <div className="flex items-center space-x-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="courseIsActive"
+                    checked={courseForm.isActive}
+                    onChange={(e) => setCourseForm({ ...courseForm, isActive: e.target.checked })}
+                    className="w-4 h-4 rounded text-indigo-600 focus:ring-0 bg-transparent border-white/20"
+                  />
+                  <label htmlFor="courseIsActive" className="text-slate-300 font-bold cursor-pointer">
+                    เปิดให้ใช้งานและจัดตารางสอนในภาคเรียนปัจจุบัน
+                  </label>
+                </div>
+
+                {/* Form Footer */}
+                <div className="flex items-center justify-end space-x-2 pt-4 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setIsCourseModalOpen(false)}
+                    className="px-4 py-2 rounded-xl glass-card hover:bg-white/10 text-slate-300 font-bold"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingCourse}
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold flex items-center space-x-1.5 shadow-md disabled:opacity-50"
+                  >
+                    {isSavingCourse ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    <span>{editingCourseId ? "บันทึกการแก้ไข" : "บันทึกรายวิชาใหม่"}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* COURSE PREVIEW MODAL                                           */}
+        {/* ============================================================== */}
+        {previewCourse && (
+          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="glass-island max-w-xl w-full rounded-3xl border border-white/20 p-6 shadow-2xl space-y-5 animate-scale-up">
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center space-x-2">
+                  <span className="font-mono font-bold text-indigo-300 bg-indigo-950/60 border border-indigo-500/30 px-3 py-1 rounded-xl text-sm">
+                    {previewCourse.code}
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      previewCourse.level === "ปวช."
+                        ? "bg-cyan-500/10 text-cyan-300 border border-cyan-500/30"
+                        : "bg-purple-500/10 text-purple-300 border border-purple-500/30"
+                    }`}
+                  >
+                    {previewCourse.level}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setPreviewCourse(null)}
+                  className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-white/10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-white text-lg">{previewCourse.nameTh}</h3>
+                {previewCourse.nameEn && (
+                  <p className="text-slate-400 text-xs mt-0.5">{previewCourse.nameEn}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs bg-black/30 p-3.5 rounded-2xl border border-white/5">
+                <div>
+                  <span className="text-slate-400 block mb-0.5">หมวดวิชา:</span>
+                  <span className="text-white font-bold">{previewCourse.category}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block mb-0.5">แผนกวิชา:</span>
+                  <span className="text-white font-bold">{previewCourse.departmentName || "ส่วนกลาง / หมวดทั่วไป"}</span>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-white/5 flex items-center justify-between">
+                  <span className="text-slate-400">โครงสร้างหลักสูตร (ท-ป-น):</span>
+                  <span className="font-mono font-bold text-white">
+                    ทฤษฎี {previewCourse.theoryHours} - ปฏิบัติ {previewCourse.practiceHours} - {previewCourse.credits} หน่วยกิต (รวม {previewCourse.totalHours} ชม./สัปดาห์)
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <h4 className="font-bold text-slate-300 mb-1 flex items-center space-x-1.5">
+                    <Info className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>คำอธิบายรายวิชา (Course Description)</span>
+                  </h4>
+                  <div className="p-3 rounded-xl bg-white/5 text-slate-300 leading-relaxed border border-white/5">
+                    {previewCourse.description || "ไม่มีข้อมูลคำอธิบายรายวิชา"}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-bold text-slate-300 mb-1 flex items-center space-x-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>สมรรถนะรายวิชา (Course Competency)</span>
+                  </h4>
+                  <div className="p-3 rounded-xl bg-white/5 text-slate-300 leading-relaxed border border-white/5">
+                    {previewCourse.competency || "ไม่มีข้อมูลสมรรถนะรายวิชา"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                  previewCourse.isActive ? "text-emerald-400 bg-emerald-500/10" : "text-rose-400 bg-rose-500/10"
+                }`}>
+                  สถานะ: {previewCourse.isActive ? "เปิดการเรียนการสอน" : "ปิดการสอน"}
+                </span>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => {
+                      const toEdit = previewCourse;
+                      setPreviewCourse(null);
+                      handleOpenEditCourse(toEdit);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold flex items-center space-x-1"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>แก้ไขวิชานี้</span>
+                  </button>
+                  <button
+                    onClick={() => setPreviewCourse(null)}
+                    className="px-4 py-2 rounded-xl glass-card text-slate-300 hover:text-white font-bold"
+                  >
+                    ปิด
+                  </button>
                 </div>
               </div>
             </div>

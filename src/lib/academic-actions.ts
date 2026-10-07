@@ -531,3 +531,174 @@ export async function getAttendanceStatsForTeachingLogAction(
     };
   }
 }
+
+// ==========================================
+// 5. COURSE CATALOG MANAGEMENT ACTIONS
+// ==========================================
+
+export interface CourseItem {
+  id: string;
+  code: string;
+  nameTh: string;
+  nameEn?: string | null;
+  level: string;
+  credits: number;
+  theoryHours: number;
+  practiceHours: number;
+  totalHours: number;
+  category: string;
+  departmentId?: string | null;
+  departmentName?: string | null;
+  description?: string | null;
+  competency?: string | null;
+  isActive: boolean;
+}
+
+export async function getCoursesAction(filters?: {
+  level?: string;
+  departmentId?: string;
+  search?: string;
+}) {
+  try {
+    const where: any = {};
+    if (filters?.level && filters.level !== "ALL") {
+      where.level = filters.level;
+    }
+    if (filters?.departmentId && filters.departmentId !== "ALL") {
+      where.departmentId = filters.departmentId;
+    }
+    if (filters?.search && filters.search.trim() !== "") {
+      const q = filters.search.trim();
+      where.OR = [
+        { code: { contains: q } },
+        { nameTh: { contains: q } },
+        { nameEn: { contains: q } },
+      ];
+    }
+
+    const items = await prisma.course.findMany({
+      where,
+      include: {
+        department: true,
+      },
+      orderBy: [{ level: "asc" }, { code: "asc" }],
+    });
+
+    const courses: CourseItem[] = items.map((c) => ({
+      id: c.id,
+      code: c.code,
+      nameTh: c.nameTh,
+      nameEn: c.nameEn,
+      level: c.level,
+      credits: c.credits,
+      theoryHours: c.theoryHours,
+      practiceHours: c.practiceHours,
+      totalHours: c.totalHours,
+      category: c.category,
+      departmentId: c.departmentId,
+      departmentName: c.department?.name || null,
+      description: c.description,
+      competency: c.competency,
+      isActive: c.isActive,
+    }));
+
+    const departments = await prisma.department.findMany({
+      select: { id: true, name: true, code: true },
+      orderBy: { name: "asc" },
+    });
+
+    return {
+      success: true,
+      courses,
+      departments,
+    };
+  } catch (error: any) {
+    console.error("getCoursesAction error:", error);
+    return {
+      success: false,
+      error: error.message,
+      courses: [],
+      departments: [],
+    };
+  }
+}
+
+export async function saveCourseAction(data: {
+  id?: string;
+  code: string;
+  nameTh: string;
+  nameEn?: string;
+  level: string;
+  credits: number;
+  theoryHours: number;
+  practiceHours: number;
+  totalHours: number;
+  category: string;
+  departmentId?: string | null;
+  description?: string;
+  competency?: string;
+  isActive?: boolean;
+}) {
+  try {
+    if (!data.code || !data.nameTh || !data.level) {
+      return { success: false, error: "กรุณากรอกรหัสวิชา ชื่อวิชา และระดับชั้นให้ครบถ้วน" };
+    }
+
+    const totalHours = Number(data.theoryHours || 0) + Number(data.practiceHours || 0);
+
+    const payload = {
+      code: data.code.trim(),
+      nameTh: data.nameTh.trim(),
+      nameEn: data.nameEn?.trim() || null,
+      level: data.level,
+      credits: Number(data.credits) || 0,
+      theoryHours: Number(data.theoryHours) || 0,
+      practiceHours: Number(data.practiceHours) || 0,
+      totalHours: totalHours > 0 ? totalHours : (Number(data.totalHours) || 0),
+      category: data.category || "หมวดวิชาสมรรถนะวิชาชีพเฉพาะ",
+      departmentId: data.departmentId && data.departmentId !== "ALL" ? data.departmentId : null,
+      description: data.description?.trim() || null,
+      competency: data.competency?.trim() || null,
+      isActive: data.isActive !== undefined ? data.isActive : true,
+    };
+
+    if (data.id) {
+      await prisma.course.update({
+        where: { id: data.id },
+        data: payload,
+      });
+    } else {
+      // Check existing code
+      const existing = await prisma.course.findUnique({
+        where: { code: payload.code },
+      });
+      if (existing) {
+        return { success: false, error: `รหัสวิชา ${payload.code} มีอยู่ในระบบแล้ว` };
+      }
+
+      await prisma.course.create({
+        data: payload,
+      });
+    }
+
+    revalidatePath("/academics");
+    return { success: true };
+  } catch (error: any) {
+    console.error("saveCourseAction error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteCourseAction(id: string) {
+  try {
+    await prisma.course.delete({
+      where: { id },
+    });
+
+    revalidatePath("/academics");
+    return { success: true };
+  } catch (error: any) {
+    console.error("deleteCourseAction error:", error);
+    return { success: false, error: error.message };
+  }
+}

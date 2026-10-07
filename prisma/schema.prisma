@@ -82,6 +82,7 @@ model Department {
   headName    String?
   personnel   PersonnelProfile[]
   classrooms  Classroom[]
+  courses     Course[]
   createdAt   DateTime           @default(now())
 }
 
@@ -354,4 +355,24 @@ model TeachingLog {
   teacherId       String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model Course {
+  id              String      @id @default(uuid())
+  code            String      @unique // เช่น 20204-2001, 30204-2001
+  nameTh          String      // การพัฒนาโปรแกรมบนอุปกรณ์เคลื่อนที่
+  nameEn          String?     // Mobile Application Development
+  level           String      // ปวช. หรือ ปวส.
+  credits         Int         @default(3) // หน่วยกิต เช่น 3
+  theoryHours     Int         @default(2) // ทฤษฎี (ท.) เช่น 2
+  practiceHours   Int         @default(2) // ปฏิบัติ (ป.) เช่น 2
+  totalHours      Int         @default(4) // รวมชั่วโมงต่อสัปดาห์
+  category        String      @default("VOCATIONAL_CORE") // GENERAL (สามัญ), VOCATIONAL_CORE (วิชาชีพเฉพาะ), VOCATIONAL_SELECT (วิชาชีพเลือก), PROJECT (โครงการ/ฝึกงาน)
+  departmentId    String?
+  department      Department? @relation(fields: [departmentId], references: [id])
+  description     String?     @db.Text // จุดประสงค์และคำอธิบายรายวิชา
+  competency      String?     @db.Text // สมรรถนะรายวิชา
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
